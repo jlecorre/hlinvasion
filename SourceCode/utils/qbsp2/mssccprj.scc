@@ -1,0 +1,9 @@
+SCC = This is a Source Code Control file
+
+[qbsp2.mak]
+SCC_Aux_Path = "\\Jeeves\VSSCODE\"
+SCC_Project_Name = "$/Sdk/Full/utils/qbsp2", COYBAAAA
+
+[writebsp.mak]
+SCC_Aux_Path = "\\Jeeves\VSSCODE\"
+SCC_Project_Name = "$/Sdk/Full/utils/qbsp2", COYBAAAA
