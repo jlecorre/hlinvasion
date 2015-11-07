@@ -398,6 +398,7 @@ void CBaseToggle ::  LinearMove( Vector	vecDest, float flSpeed )
 	
 	m_vecFinalDest = vecDest;
 
+
 	// Already there?
 	if (vecDest == pev->origin)
 	{

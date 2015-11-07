@@ -21,6 +21,12 @@
 #include	"cbase.h"
 #include	"monsters.h"
 #include	"schedule.h"
+#include	"weapons.h"
+
+// modif de Julien
+#define NO_MEMBRE					1
+
+#define HEAD_GROUP					1
 
 
 //=========================================================
@@ -105,6 +111,10 @@ public:
 	static const char *pAttackSounds[];
 	static const char *pDeathSounds[];
 	static const char *pBiteSounds[];
+
+	// modif de Julien
+	void TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType);
+
 };
 LINK_ENTITY_TO_CLASS( monster_headcrab, CHeadCrab );
 
@@ -432,6 +442,35 @@ int CHeadCrab :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 
 	return CBaseMonster::TakeDamage( pevInflictor, pevAttacker, flDamage, bitsDamageType );
 }
+
+
+#define NO_MEMBRE					1
+
+#define HEAD_GROUP					1
+
+
+
+
+// modif de julien
+
+void CHeadCrab :: TraceAttack( entvars_t *pevAttacker, float flDamage, Vector vecDir, TraceResult *ptr, int bitsDamageType)
+{
+	CBaseMonster :: TraceAttack( pevAttacker, flDamage, vecDir, ptr, bitsDamageType);
+
+	//demembrage
+
+	if ( gMultiDamage.pEntity != this )
+		return;
+	
+	if ( ( pev->health - ( gMultiDamage.amount ) <= 0 )  && IsAlive() && m_iHasGibbed == 0 )
+	{
+		if ( ptr->iHitgroup == HITGROUP_HEAD )
+			SetBodygroup( HEAD_GROUP, NO_MEMBRE);
+	}
+
+}
+
+
 
 //=========================================================
 // IdleSound

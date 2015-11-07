@@ -687,6 +687,11 @@ void CScientist :: Spawn( void )
 	
 	MonsterInit();
 	SetUse( FollowerUse );
+
+	// modif de Julien
+
+	m_bIdleSentState = FALSE;
+
 }
 
 //=========================================================
@@ -700,6 +705,11 @@ void CScientist :: Precache( void )
 	PRECACHE_SOUND("scientist/sci_pain3.wav");
 	PRECACHE_SOUND("scientist/sci_pain4.wav");
 	PRECACHE_SOUND("scientist/sci_pain5.wav");
+
+	// modif de Julien
+
+	PRECACHE_SOUND ( "buttons/blip1.wav" );
+	PRECACHE_SOUND ( "buttons/blip2.wav" );
 
 	// every new scientist must call this, otherwise
 	// when a level is loaded, nobody will talk (time is reset to 0)
@@ -983,7 +993,7 @@ Schedule_t *CScientist :: GetSchedule ( void )
 			return GetScheduleOfType( SCHED_MOVE_AWAY );
 
 		// try to say something about smells
-		TrySmellTalk();
+		//TrySmellTalk();		// modif de Julien
 		break;
 	case MONSTERSTATE_COMBAT:
 		if ( HasConditions( bits_COND_NEW_ENEMY ) )

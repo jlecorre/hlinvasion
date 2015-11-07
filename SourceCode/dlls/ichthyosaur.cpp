@@ -1024,7 +1024,7 @@ void CIchthyosaur::Swim( )
 
 	// ALERT( at_console, "yaw %f : %f\n", turn, yaw_adj );
 
-	SetBoneController( 0, -yaw_adj / 4.0 );
+//	SetBoneController( 0, -yaw_adj / 4.0 );
 
 	// Roll Smoothing
 	//

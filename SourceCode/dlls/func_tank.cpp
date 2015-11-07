@@ -29,6 +29,9 @@
 #define SF_TANK_LINEOFSIGHT		0x0010
 #define SF_TANK_CANCONTROL		0x0020
 #define SF_TANK_SOUNDON			0x8000
+//modif de Julien
+#define SF_TANK_L2M2			128
+#define SF_TANK_L2M1			256
 
 enum TANKBULLET
 {
@@ -180,6 +183,7 @@ void CFuncTank :: Spawn( void )
 
 	pev->movetype	= MOVETYPE_PUSH;  // so it doesn't get pushed by anything
 	pev->solid		= SOLID_BSP;
+
 	SET_MODEL( ENT(pev), STRING(pev->model) );
 
 	m_yawCenter = pev->angles.y;
@@ -332,6 +336,10 @@ BOOL CFuncTank :: OnControls( entvars_t *pevTest )
 		return FALSE;
 
 	Vector offset = pevTest->origin - pev->origin;
+
+	// modif de julien
+	if ( pev->spawnflags & SF_TANK_L2M1 )
+		return TRUE;
 
 	if ( (m_vecControllerUsePos - pevTest->origin).Length() < 30 )
 		return TRUE;
@@ -498,6 +506,7 @@ void CFuncTank::TrackTarget( void )
 	}
 	else
 	{
+	
 		if ( IsActive() )
 			pev->nextthink = pev->ltime + 0.1;
 		else
@@ -505,9 +514,21 @@ void CFuncTank::TrackTarget( void )
 
 		if ( FNullEnt( pPlayer ) )
 		{
-			if ( IsActive() )
-				pev->nextthink = pev->ltime + 2;	// Wait 2 secs
-			return;
+			// modif de Julien
+			// ne voit pas le joueur - essaie de repérer un tank
+
+			edict_t *pPlayerTank = FIND_ENTITY_BY_CLASSNAME ( NULL, "vehicle_tank" );
+
+			if ( FNullEnt(pPlayerTank) )
+			{
+				if ( IsActive() )
+					pev->nextthink = pev->ltime + 2;	// Wait 2 secs
+				return;
+			}
+			else
+			{
+				pPlayer = pPlayerTank;
+			}
 		}
 		pTarget = FindTarget( pPlayer );
 		if ( !pTarget )
@@ -525,7 +546,7 @@ void CFuncTank::TrackTarget( void )
 		
 		lineOfSight = FALSE;
 		// No line of sight, don't track
-		if ( tr.flFraction == 1.0 || tr.pHit == pTarget )
+		if ( tr.flFraction == 1.0 || tr.pHit == pTarget || (pev->spawnflags & SF_TANK_L2M2) )
 		{
 			lineOfSight = TRUE;
 
@@ -549,6 +570,12 @@ void CFuncTank::TrackTarget( void )
 	}
 
 	angles.x = -angles.x;
+
+		
+	//modif de Julien
+	//=======================
+	pev->vuser1 = BarrelPosition ();	// cela donne ses coordonnées, stockées dans la structure entvars_t sous vuser1
+	//================
 
 	// Force the angles to be relative to the center position
 	angles.y = m_yawCenter + UTIL_AngleDistance( angles.y, m_yawCenter );
@@ -577,6 +604,7 @@ void CFuncTank::TrackTarget( void )
 	else if ( pev->avelocity.y < -m_yawRate )
 		pev->avelocity.y = -m_yawRate;
 
+
 	// Limit against range in x
 	if ( angles.x > m_pitchCenter + m_pitchRange )
 		angles.x = m_pitchCenter + m_pitchRange;
@@ -601,7 +629,7 @@ void CFuncTank::TrackTarget( void )
 		Vector forward;
 		UTIL_MakeVectorsPrivate( pev->angles, forward, NULL, NULL );
 
-		if ( pev->spawnflags & SF_TANK_LINEOFSIGHT )
+		if ( pev->spawnflags & SF_TANK_LINEOFSIGHT && !(pev->spawnflags & SF_TANK_L2M2) )
 		{
 			float length = direction.Length();
 			UTIL_TraceLine( barrelEnd, barrelEnd + forward * length, dont_ignore_monsters, edict(), &tr );
@@ -650,6 +678,7 @@ void CFuncTank::AdjustAnglesForBarrel( Vector &angles, float distance )
 // Fire targets and spawn sprites
 void CFuncTank::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
+
 	if ( m_fireLast != 0 )
 	{
 		if ( m_iszSpriteSmoke )
@@ -899,6 +928,7 @@ void CFuncTankRocket::Fire( const Vector &barrelEnd, const Vector &forward, entv
 {
 	int i;
 
+
 	if ( m_fireLast != 0 )
 	{
 		int bulletCount = (gpGlobals->time - m_fireLast) * m_fireRate;
@@ -939,6 +969,11 @@ void CFuncTankMortar::KeyValue( KeyValueData *pkvd )
 
 void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entvars_t *pevAttacker )
 {
+	if ( (pev->spawnflags & SF_TANK_L2M2) && (m_fireLast == 0) )
+	{
+		m_fireLast = gpGlobals->time - 2.5;
+	}
+
 	if ( m_fireLast != 0 )
 	{
 		int bulletCount = (gpGlobals->time - m_fireLast) * m_fireRate;
@@ -952,7 +987,7 @@ void CFuncTankMortar::Fire( const Vector &barrelEnd, const Vector &forward, entv
 
 			TankTrace( barrelEnd, forward, gTankSpread[m_spread], tr );
 
-			ExplosionCreate( tr.vecEndPos, pev->angles, edict(), pev->impulse, TRUE );
+			ExplosionCreate( tr.vecEndPos, pev->angles, edict(), pev->impulse, TRUE, pev->spawnflags & SF_TANK_L2M2 ? (tr.vecEndPos-barrelEnd).Length() / 6000 : 0 );
 
 			CFuncTank::Fire( barrelEnd, forward, pev );
 		}

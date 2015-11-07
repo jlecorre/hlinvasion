@@ -10,6 +10,8 @@
 #include "cl_entity.h"
 #include "triangleapi.h"
 
+
+
 #define DLLEXPORT __declspec( dllexport )
 
 extern "C"
@@ -93,6 +95,9 @@ Non-transparent triangles-- add them here
 */
 void DLLEXPORT HUD_DrawNormalTriangles( void )
 {
+	// dessin du brouillard
+	gHUD.m_Fog.DrawFog ();
+
 
 #if defined( TEST_IT )
 //	Draw_Triangles();
@@ -108,6 +113,12 @@ Render any triangles with transparent rendermode needs here
 */
 void DLLEXPORT HUD_DrawTransparentTriangles( void )
 {
+	gHUD.m_Particules.DrawAll();	// affichage des particules et des decals
+	gHUD.m_LFlammes.DrawFlammes();	// lance flammes
+	gHUD.m_Briquet.DrawFlamme();	// briquet
+	gHUD.m_LensFlare.DrawLight();	// lensflare
+
+
 
 #if defined( TEST_IT )
 //	Draw_Triangles();

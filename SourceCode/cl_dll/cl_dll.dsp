@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\utils\vgui\include" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\dlls" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\utils\vgui\include" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\dlls" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -54,13 +54,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib winmm.lib ../utils/vgui/lib/win32_vc6/vgui.lib wsock32.lib /nologo /subsystem:windows /dll /map /machine:I386 /out:".\Release\client.dll"
-# Begin Custom Build - Copying to cl_dlls
-TargetDir=.\Release
+# Begin Custom Build - Copying to F:\Half-Life\invasion\cl_dlls
 InputPath=.\Release\client.dll
 SOURCE="$(InputPath)"
 
-"\half-life\mp\cl_dlls\client.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy $(TargetDir)\client.dll \half-life\mp\cl_dlls
+"client.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy F:\Half-Life\invasion\dlls\SourceCode\cl_dll\Release\client.dll F:\Half-Life\invasion\cl_dlls
 
 # End Custom Build
 
@@ -89,13 +88,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
 # ADD LINK32 oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib winmm.lib ../utils/vgui/lib/win32_vc6/vgui.lib wsock32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:".\Debug\client.dll"
-# Begin Custom Build - Copying to cl_dlls
-TargetDir=.\Debug
+# Begin Custom Build - Copying to F:\Half-Life\invasion\cl_dlls
 InputPath=.\Debug\client.dll
 SOURCE="$(InputPath)"
 
-"\half-life\mp\cl_dlls\client.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy $(TargetDir)\client.dll \half-life\mp\cl_dlls
+"client.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy F:\Half-Life\invasion\dlls\SourceCode\cl_dll\Release\client.dll F:\Half-Life\invasion\cl_dlls
 
 # End Custom Build
 
@@ -113,7 +111,23 @@ SOURCE="$(InputPath)"
 # PROP Default_Filter "*.CPP"
 # Begin Source File
 
+SOURCE=.\clientbriquet.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\clientfog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\clientlflammes.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\ev_hldm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStudioModelRenderer.cpp
 # End Source File
 # Begin Source File
 
@@ -134,6 +148,58 @@ SOURCE=.\hl\hl_weapons.cpp
 # Begin Source File
 
 SOURCE=..\dlls\wpn_shared\hl_wpn_glock.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\hud_tank.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\hudradio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\hudrpg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\hudzoom.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\lensflare.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\nvg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\particules.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\studio_util.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\StudioModelRenderer.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_keypad.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_OrdiControl.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_radio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_soin.cpp
 # End Source File
 # End Group
 # Begin Source File
@@ -210,6 +276,10 @@ SOURCE=.\hud_servers.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\hud_spectator.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\hud_update.cpp
 # End Source File
 # Begin Source File
@@ -231,6 +301,10 @@ SOURCE=.\menu.cpp
 # Begin Source File
 
 SOURCE=.\message.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\overview.cpp
 # End Source File
 # Begin Source File
 
@@ -306,6 +380,10 @@ SOURCE=.\vgui_MOTDWindow.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\vgui_OrdiMenu.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\vgui_SchemeManager.cpp
 # End Source File
 # Begin Source File
@@ -366,6 +444,14 @@ SOURCE=.\eventscripts.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\GameStudioModelRenderer.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\GameStudioModelRenderer_Sample.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\health.h
 # End Source File
 # Begin Source File
@@ -386,11 +472,19 @@ SOURCE=.\hud_servers_priv.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\hud_spectator.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\in_defs.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\kbutton.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\overview.h
 # End Source File
 # Begin Source File
 
@@ -418,6 +512,18 @@ SOURCE=..\pm_shared\pm_shared.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\r_studioint.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\studio_util.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\StudioModelRenderer.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\util.h
 # End Source File
 # Begin Source File
@@ -438,6 +544,22 @@ SOURCE=.\vgui_int.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\vgui_keypad.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_OrdiControl.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_OrdiMenu.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_radio.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\vgui_SchemeManager.h
 # End Source File
 # Begin Source File
@@ -447,6 +569,10 @@ SOURCE=.\vgui_ScorePanel.h
 # Begin Source File
 
 SOURCE=.\vgui_ServerBrowser.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\vgui_soin.h
 # End Source File
 # Begin Source File
 

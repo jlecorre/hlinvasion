@@ -10,7 +10,10 @@
 #include "r_efx.h"
 #include "event_api.h"
 #include "pm_defs.h"
-#include "pmtrace.h"	
+#include "pmtrace.h"
+
+//modif de Julien
+#include "eventscripts.h"	
 
 #define DLLEXPORT __declspec( dllexport )
 
@@ -215,8 +218,9 @@ void MoveModel( void )
 }
 
 #endif
-
-//#define TRACE_TEST
+*/
+/*
+#define TRACE_TEST
 #if defined( TRACE_TEST )
 
 extern int hitent;
@@ -247,8 +251,8 @@ void TraceModel( void )
 
 #endif
 */
-
 /*
+
 void ParticleCallback( struct particle_s *particle, float frametime )
 {
 	int i;
@@ -312,8 +316,8 @@ void Particles( void )
 		p->die += 3.0;
 	}
 }
-*/
 
+*/
 /*
 void TempEntCallback ( struct tempent_s *ent, float frametime, float currenttime )
 {
@@ -373,7 +377,7 @@ void TempEnts( void )
 	}
 }
 */
-
+//#define BEAM_TEST
 #if defined( BEAM_TEST )
 // Note can't index beam[ 0 ] in Beam callback, so don't use that index
 // Room for 1 beam ( 0 can't be used )
@@ -512,6 +516,7 @@ void DLLEXPORT HUD_StudioEvent( const struct mstudioevent_s *event, const struct
 	case 5004:		
 		gEngfuncs.pfnPlaySoundByNameAtLocation( (char *)event->options, 1.0, (float *)&entity->attachment[0] );
 		break;
+
 	default:
 		break;
 	}
@@ -579,8 +584,10 @@ void DLLEXPORT HUD_TempEntUpdate (
 	gravity = -frametime * cl_gravity;
 	gravitySlow = gravity * 0.5;
 
+
 	while ( pTemp )
 	{
+
 		int active;
 
 		active = 1;
@@ -878,6 +885,7 @@ void DLLEXPORT HUD_TempEntUpdate (
 		}
 		pTemp = pnext;
 	}
+
 
 finish:
 	// Restore state info

@@ -40,6 +40,9 @@
 #define	BARNEY_BODY_GUNDRAWN		1
 #define BARNEY_BODY_GUNGONE			2
 
+//Julien
+#define	SF_BARNEY_L2M6				2048
+
 class CBarney : public CTalkMonster
 {
 public:
@@ -261,6 +264,10 @@ int CBarney :: ISoundMask ( void)
 //=========================================================
 int	CBarney :: Classify ( void )
 {
+	// modif de julien
+	if ( pev->spawnflags & SF_BARNEY_L2M6 )
+		return CLASS_NONE;
+
 	return	CLASS_PLAYER_ALLY;
 }
 
@@ -414,6 +421,7 @@ void CBarney :: Spawn()
 	pev->movetype		= MOVETYPE_STEP;
 	m_bloodColor		= BLOOD_COLOR_RED;
 	pev->health			= gSkillData.barneyHealth;
+
 	pev->view_ofs		= Vector ( 0, 0, 50 );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so npc will notice player and say hello
 	m_MonsterState		= MONSTERSTATE_NONE;
@@ -425,6 +433,10 @@ void CBarney :: Spawn()
 
 	MonsterInit();
 	SetUse( FollowerUse );
+
+	// modif de Julien
+
+	m_bIdleSentState = FALSE;
 }
 
 //=========================================================

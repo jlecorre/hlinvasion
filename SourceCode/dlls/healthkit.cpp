@@ -68,6 +68,28 @@ void CHealthKit::Precache( void )
 
 BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 {
+
+	// modif de Julien
+
+	if ( pPlayer->m_iMedkit == 9 )
+		return FALSE;
+
+	else
+	{
+		pPlayer->m_iMedkit ++;
+		EMIT_SOUND(ENT(pPlayer->pev), CHAN_ITEM, "items/smallmedkit1.wav", 1, ATTN_NORM);
+
+		MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
+			WRITE_STRING( STRING(pev->classname) );
+		MESSAGE_END();
+
+		// modif de Julien
+		pPlayer->TextAmmo( TA_MEDKIT );
+
+		return TRUE;
+	}
+	
+	/*
 	if ( pPlayer->TakeHealth( gSkillData.healthkitCapacity, DMG_GENERIC ) )
 	{
 		MESSAGE_BEGIN( MSG_ONE, gmsgItemPickup, NULL, pPlayer->pev );
@@ -89,6 +111,7 @@ BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 	}
 
 	return FALSE;
+	*/
 }
 
 

@@ -93,6 +93,22 @@ BOOL CGlock::Deploy( )
 	return DefaultDeploy( "models/v_9mmhandgun.mdl", "models/p_9mmhandgun.mdl", GLOCK_DRAW, "onehanded", /*UseDecrement() ? 1 : 0*/ 0 );
 }
 
+// modif de Julien
+int CGlock::AddToPlayer( CBasePlayer *pPlayer )
+{
+	if ( CBasePlayerWeapon::AddToPlayer( pPlayer ) )
+	{
+		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
+			WRITE_BYTE( m_iId );
+		MESSAGE_END();
+
+		m_pPlayer->TextAmmo( TA_HANDGUN );
+
+		return TRUE;
+	}
+	return FALSE;
+}
+
 void CGlock::SecondaryAttack( void )
 {
 	GlockFire( 0.1, 0.2, FALSE );
@@ -171,7 +187,7 @@ void CGlock::GlockFire( float flSpread , float flCycleTime, BOOL fUseAutoAim )
 	{
 		// non-silenced
 		m_pPlayer->m_iWeaponVolume = NORMAL_GUN_VOLUME;
-		m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+		m_pPlayer->Gunflash ();
 #if defined ( OLD_WEAPONS )
 		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/pl_gun3.wav", RANDOM_FLOAT(0.92, 1.0), ATTN_NORM, 0, 98 + RANDOM_LONG(0,3));
 #endif
@@ -212,7 +228,7 @@ void CGlock::Reload( void )
 	if (m_iClip == 0)
 		iResult = DefaultReload( 17, GLOCK_RELOAD, 1.5 );
 	else
-		iResult = DefaultReload( 18, GLOCK_RELOAD_NOT_EMPTY, 1.5 );
+		iResult = DefaultReload( 17, GLOCK_RELOAD_NOT_EMPTY, 1.5 );	// modif de julien - remplace 18 par 17
 
 	if (iResult)
 	{
@@ -234,24 +250,29 @@ void CGlock::WeaponIdle( void )
 	// only idle if the slid isn't back
 	if (m_iClip != 0)
 	{
-		int iAnim;
-		float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 0.0, 1.0 );
+		if (m_flTimeWeaponIdle > gpGlobals->time)
+		return;
 
-		if (flRand <= 0.3 + 0 * 0.75)
+		int iAnim;
+
+		switch ( RANDOM_LONG( 0, 4 ) )
 		{
-			iAnim = GLOCK_IDLE3;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 49.0 / 16;
-		}
-		else if (flRand <= 0.6 + 0 * 0.875)
-		{
+		case 0 :
 			iAnim = GLOCK_IDLE1;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 60.0 / 16.0;
-		}
-		else
-		{
+			break;
+
+		case 1 :
 			iAnim = GLOCK_IDLE2;
-			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 40.0 / 16.0;
+			break;
+
+		case 3 :
+		default :
+			iAnim = GLOCK_IDLE3;
+			break;
 		}
+
+		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + RANDOM_FLOAT( 6, 15 );
+
 		SendWeaponAnim( iAnim, 1 );
 	}
 }

@@ -28,8 +28,10 @@
 #include <string.h>
 
 
+
 DECLARE_MESSAGE(m_Health, Health )
 DECLARE_MESSAGE(m_Health, Damage )
+DECLARE_MESSAGE(m_Health, Medkit )	// modif de Julien
 
 #define PAIN_NAME "sprites/%d_pain.spr"
 #define DAMAGE_NAME "sprites/%d_dmg.spr"
@@ -56,6 +58,7 @@ int CHudHealth::Init(void)
 {
 	HOOK_MESSAGE(Health);
 	HOOK_MESSAGE(Damage);
+	HOOK_MESSAGE(Medkit);		// modif de Julien
 	m_iHealth = 100;
 	m_fFade = 0;
 	m_iFlags = 0;
@@ -65,6 +68,16 @@ int CHudHealth::Init(void)
 	giDmgWidth = 0;
 
 	memset(m_dmg, 0, sizeof(DAMAGE_IMAGE) * NUM_DMG_TYPES);
+
+	// modif de Julien
+	m_sprDisposition = SPR_Load("sprites/hud_health_dispostion.spr");
+	m_wrcDisposition = CreateWrect ( 2, 2, 174, 158 ); 
+	m_sprVie = SPR_Load("sprites/hud_health_vie.spr");
+	m_wrcVie = CreateWrect ( 1, 8 + (int)(144*0.01*(100-m_iHealth)), 30, 158 ); 
+
+	m_sprMedkit = SPR_Load("sprites/hud_health_medkit.spr");
+	m_wrcMedkit = CreateWrect ( 0, 0, 104, 32 );
+	m_iMedkit = m_iBattery = 0;
 
 
 	gHUD.AddHudElem(this);
@@ -94,6 +107,27 @@ int CHudHealth::VidInit(void)
 
 	giDmgHeight = gHUD.GetSpriteRect(m_HUD_dmg_bio).right - gHUD.GetSpriteRect(m_HUD_dmg_bio).left;
 	giDmgWidth = gHUD.GetSpriteRect(m_HUD_dmg_bio).bottom - gHUD.GetSpriteRect(m_HUD_dmg_bio).top;
+
+	// modif de Julien
+	m_sprDisposition = SPR_Load("sprites/hud_health_dispostion.spr");
+	m_wrcDisposition = CreateWrect ( 2, 2, 174, 158 ); 
+	m_sprVie = SPR_Load("sprites/hud_health_vie.spr");
+	m_wrcVie = CreateWrect ( 1, 8 + (int)(144*0.01*(100-m_iHealth)), 30, 158 ); 
+
+	m_sprMedkit = SPR_Load("sprites/hud_health_medkit.spr");
+	m_wrcMedkit = CreateWrect ( 0, 0, 104, 32 );
+
+	return 1;
+}
+
+
+int CHudHealth:: MsgFunc_Medkit(const char *pszName,  int iSize, void *pbuf )
+{
+	BEGIN_READ( pbuf, iSize );
+
+	m_iMedkit = READ_BYTE();
+	m_iBattery = READ_BYTE();
+
 	return 1;
 }
 
@@ -110,6 +144,10 @@ int CHudHealth:: MsgFunc_Health(const char *pszName,  int iSize, void *pbuf )
 	{
 		m_fFade = FADE_TIME;
 		m_iHealth = x;
+
+		//modif de Julien
+		m_wrcVie = CreateWrect ( 1, 8 + (int)(144*0.01*(100-m_iHealth)), 30, 158 ); 
+
 	}
 
 	return 1;
@@ -169,8 +207,16 @@ void CHudHealth::GetPainColor( int &r, int &g, int &b )
 
 int CHudHealth::Draw(float flTime)
 {
+
+// modif de juline
+	if ( !(gHUD.m_iWeaponBits & (1<<(WEAPON_SUIT)))  )
+		return 1;
+
+
 	int r, g, b;
-	int a = 0, x, y;
+	int a = 0;
+	
+/*	int x, y;
 	int HealthWidth;
 
 //	if (m_iHealth <= 0)
@@ -217,7 +263,7 @@ int CHudHealth::Draw(float flTime)
 		x = CrossWidth /2;
 
 		SPR_Set(gHUD.GetSprite(m_HUD_cross), r, g, b);
-		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_cross));
+//		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_cross));
 
 		x = CrossWidth + HealthWidth / 2;
 
@@ -229,10 +275,59 @@ int CHudHealth::Draw(float flTime)
 		int iWidth = HealthWidth/10;
 		FillRGBA(x, y, iWidth, iHeight, 255, 160, 0, a);
 	}
+*/
+
+	if ( !m_hSprite )
+		m_hSprite = LoadSprite(PAIN_NAME);
+
+	// modif de Julien
+	// dessin du nouveau hud pour le compteur de vie
+
+	if (m_iHealth <= 25)
+	{
+		r = 255; g = 0; b = 0;
+		a = 170;
+	}
+	else
+	{
+		r = g = b = 255;
+		a = 255;
+	}
+
+	ScaleColors(r, g, b, a );
+	SPR_Set( m_sprDisposition, r, g, b );
+	SPR_DrawHoles(0, 0, 0, &m_wrcDisposition);
+
+	char cNombre [16];
+	sprintf ( cNombre, "%i", m_iHealth );
+	gHUD.DrawHudStringReverse( 195, 135, 0, cNombre, r, g, b );
+
+	if ( m_iHealth > 0 )
+	{
+		SPR_Set( m_sprVie, 255, 255, 255 );
+		SPR_DrawHoles(0, 150, m_wrcVie.top - 2, &m_wrcVie);
+	}
+
+	// medkits et battery
+
+	SPR_Set( m_sprMedkit, 255, 255, 255 );
+	SPR_DrawHoles(0, 172, 0, &m_wrcMedkit);
+
+	sprintf ( cNombre, "%i", m_iBattery );
+	gHUD.DrawHudStringReverse( 217, 10, 0, cNombre, 255, 255, 255 );
+	sprintf ( cNombre, "%i", m_iMedkit );
+	gHUD.DrawHudStringReverse( 284, 10, 0, cNombre, 255, 255, 255 );
+
+
+
+	//-----------------
 
 	DrawDamage(flTime);
-	return DrawPain(flTime);
+	DrawPain(flTime);
+
+	return 1;
 }
+
 
 void CHudHealth::CalcDamageDirection(vec3_t vecFrom)
 {
@@ -389,6 +484,8 @@ int CHudHealth::DrawDamage(float flTime)
 			pdmg = &m_dmg[i];
 			SPR_Set(gHUD.GetSprite(m_HUD_dmg_bio + i), r, g, b );
 			SPR_DrawAdditive(0, pdmg->x, pdmg->y, &gHUD.GetSpriteRect(m_HUD_dmg_bio + i));
+
+
 		}
 	}
 

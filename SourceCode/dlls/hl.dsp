@@ -19,8 +19,6 @@ CFG=hl - Win32 Release
 !MESSAGE 
 !MESSAGE "hl - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "hl - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "hl - Win32 Germany" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "hl - Win32 Profile" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -42,6 +40,7 @@ RSC=rc.exe
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir ".\Releasehl"
 # PROP Intermediate_Dir ".\Releasehl"
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /G5 /MT /W3 /Zi /O2 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /Fr /YX /FD /c
@@ -54,15 +53,14 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /def:".\hl.def"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib fmodvc.lib /nologo /subsystem:windows /dll /map /debug /machine:I386 /def:".\hl.def"
 # SUBTRACT LINK32 /profile
-# Begin Custom Build - Copying
-TargetDir=.\Releasehl
+# Begin Custom Build - copie du fichier
 InputPath=.\Releasehl\hl.dll
 SOURCE="$(InputPath)"
 
-"\half-life\mp\dlls\hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy $(TargetDir)\hl.dll \half-life\mp\dlls
+"hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy F:\Half-Life\invasion\dlls\SourceCode\dlls\Releasehl\hl.dll F:\Half-Life\invasion\dlls
 
 # End Custom Build
 
@@ -92,95 +90,13 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
 # ADD LINK32 user32.lib advapi32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:".\hl.def" /implib:".\Debug\hl.lib"
 # SUBTRACT LINK32 /profile
-# Begin Custom Build - Copying
-TargetDir=.\debughl
+# Begin Custom Build - copie du fichier dans le dossier F:\Half-Life\invasion\dlls
 InputPath=.\debughl\hl.dll
 SOURCE="$(InputPath)"
 
-"\half-life\mp\dlls\hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy $(TargetDir)\hl.dll \half-life\mp\dlls\hl.dll
+"hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	copy F:\Half-Life\invasion\dlls\SourceCode\dlls\Releasehl\hl.dll F:\Half-Life\invasion\dlls
 
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "hl - Win32 Germany"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\hl___Win"
-# PROP BASE Intermediate_Dir ".\hl___Win"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Germany"
-# PROP Intermediate_Dir ".\Germany"
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "..\engine" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /FR /YX /c
-# ADD CPP /nologo /MT /W3 /O2 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /D "GERMANY" /FR /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386 /def:".\hl.def"
-# SUBTRACT BASE LINK32 /profile
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386 /def:".\hl.def"
-# SUBTRACT LINK32 /profile
-# Begin Custom Build - Copying to \quiver\valve\dlls
-TargetDir=.\Germany
-InputPath=.\Germany\hl.dll
-SOURCE="$(InputPath)"
-
-"\quiver\valve\Germandlls\hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	copy $(TargetDir)\hl.dll \quiver\valve\Germandlls
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "hl - Win32 Profile"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\hl___Win"
-# PROP BASE Intermediate_Dir ".\hl___Win"
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Profilehl"
-# PROP Intermediate_Dir ".\Profilehl"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /G5 /MT /W3 /GX /Zi /O2 /I "..\engine" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /YX /c
-# SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /G5 /MT /W3 /Zi /O2 /I "..\dlls" /I "..\engine" /I "..\common" /I "..\pm_shared" /I "..\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "QUIVER" /D "VOXEL" /D "QUAKE2" /D "VALVE_DLL" /YX /FD /c
-# SUBTRACT CPP /Fr
-# ADD BASE MTL /nologo /D "NDEBUG" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:I386 /def:".\hl.def"
-# SUBTRACT BASE LINK32 /profile
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /profile /debug /machine:I386 /def:".\hl.def"
-# Begin Custom Build - Copying to \quiver\valve\dlls
-TargetDir=.\Profilehl
-InputPath=.\Profilehl\hl.dll
-SOURCE="$(InputPath)"
-
-BuildCmds= \
-	copy $(TargetDir)\hl.dll \quiver\valve\dlls \
-	copy $(TargetDir)\hl.map \quiver\valve\dlls \
-	
-
-"\quiver\valve\dlls\hl.dll" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
-
-"\quiver\valve\dlls\hl.map" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-   $(BuildCmds)
 # End Custom Build
 
 !ENDIF 
@@ -189,8 +105,6 @@ BuildCmds= \
 
 # Name "hl - Win32 Release"
 # Name "hl - Win32 Debug"
-# Name "hl - Win32 Germany"
-# Name "hl - Win32 Profile"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
@@ -240,6 +154,10 @@ SOURCE=.\bmodels.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\briquet.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\bullsquid.cpp
 # End Source File
 # Begin Source File
@@ -264,15 +182,15 @@ SOURCE=.\controller.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\crossbow.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\crowbar.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\defaultai.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\diablo.cpp
 # End Source File
 # Begin Source File
 
@@ -284,15 +202,27 @@ SOURCE=.\effects.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\egon.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\explode.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\fgrenade.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\flybee.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\flyingmonster.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\fog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\fsniper.cpp
 # End Source File
 # Begin Source File
 
@@ -301,6 +231,10 @@ SOURCE=.\func_break.cpp
 # Begin Source File
 
 SOURCE=.\func_tank.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\func_vgui.cpp
 # End Source File
 # Begin Source File
 
@@ -384,15 +318,15 @@ SOURCE=.\hornet.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\hornetgun.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\houndeye.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\ichthyosaur.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\irgun.cpp
 # End Source File
 # Begin Source File
 
@@ -408,11 +342,27 @@ SOURCE=.\leech.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\lflammes.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\lights.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\luciole.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\m16.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\maprules.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\miroir.cpp
 # End Source File
 # Begin Source File
 
@@ -441,6 +391,10 @@ SOURCE=.\mp5.cpp
 # Begin Source File
 
 SOURCE=.\multiplay_gamerules.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\music.cpp
 # End Source File
 # Begin Source File
 
@@ -488,6 +442,10 @@ SOURCE=.\python.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\radiomsg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\rat.cpp
 # End Source File
 # Begin Source File
@@ -497,6 +455,10 @@ SOURCE=.\roach.cpp
 # Begin Source File
 
 SOURCE=.\rpg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\rpggrunt.cpp
 # End Source File
 # Begin Source File
 
@@ -528,6 +490,10 @@ SOURCE=.\skill.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\sniper.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\sound.cpp
 # End Source File
 # Begin Source File
@@ -552,7 +518,19 @@ SOURCE=.\subs.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\supergun.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\t_sub.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\talkmonster.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\tank.cpp
 # End Source File
 # Begin Source File
 
@@ -684,7 +662,15 @@ SOURCE=.\items.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\lflammes.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\monsterevent.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\music.h
 # End Source File
 # Begin Source File
 
@@ -721,6 +707,14 @@ SOURCE=..\pm_shared\pm_movevars.h
 # Begin Source File
 
 SOURCE=..\pm_shared\pm_shared.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\radiomsg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\rpg.h
 # End Source File
 # Begin Source File
 
@@ -765,6 +759,10 @@ SOURCE=.\teamplay_gamerules.h
 # Begin Source File
 
 SOURCE=.\trains.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\triggers.h
 # End Source File
 # Begin Source File
 

@@ -30,7 +30,7 @@ enum w_squeak_e {
 	WSQUEAK_JUMP,
 	WSQUEAK_RUN,
 };
-
+/*
 enum squeak_e {
 	SQUEAK_IDLE1 = 0,
 	SQUEAK_FIDGETFIT,
@@ -39,7 +39,7 @@ enum squeak_e {
 	SQUEAK_UP,
 	SQUEAK_THROW
 };
-
+*/
 class CSqueakGrenade : public CGrenade
 {
 	void Spawn( void );
@@ -405,7 +405,7 @@ void CSqueakGrenade::SuperBounceTouch( CBaseEntity *pOther )
 	m_flNextBounceSoundTime = gpGlobals->time + 0.5;// half second.
 }
 
-
+/*
 
 class CSqueak : public CBasePlayerWeapon
 {
@@ -461,7 +461,7 @@ int CSqueak::GetItemInfo(ItemInfo *p)
 	p->iMaxAmmo2 = -1;
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iSlot = 4;
-	p->iPosition = 3;
+	p->iPosition = 4;
 	p->iId = m_iId = WEAPON_SNARK;
 	p->iWeight = SNARK_WEIGHT;
 	p->iFlags = ITEM_FLAG_LIMITINWORLD | ITEM_FLAG_EXHAUSTIBLE;
@@ -487,7 +487,7 @@ BOOL CSqueak::Deploy( )
 }
 
 
-void CSqueak::Holster( int skiplocal /* = 0 */ )
+void CSqueak::Holster( int skiplocal  )
 {
 	m_pPlayer->m_flNextAttack = gpGlobals->time + 0.5;
 	
@@ -600,5 +600,5 @@ void CSqueak::WeaponIdle( void )
 	}
 	SendWeaponAnim( iAnim );
 }
-
+*/
 #endif

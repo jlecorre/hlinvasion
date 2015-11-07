@@ -477,6 +477,64 @@ void IN_MLookUp (void)
 	}
 }
 
+// modif de Julien
+
+void IN_BatteryDown ( void )
+{}
+
+void IN_BatteryUp ( void )
+{
+	if ( gHUD.m_flTimeDelta > 0 )
+		gEngfuncs.pfnClientCmd("battery" );
+}
+
+
+void IN_MedkitDown ( void )
+{}
+
+void IN_MedkitUp ( void )
+{
+	if ( gHUD.m_flTimeDelta > 0 )
+		gEngfuncs.pfnClientCmd("medkit" );
+}
+
+
+// modif de julien
+
+void IN_SoinDown ( void )
+{
+	if ( gViewPort->m_pCurrentMenu && gViewPort->m_pCurrentMenu->GetMenuID() == MENU_RADIO )
+	{
+		gViewPort->m_pCurrentMenu->Close ();
+
+	}
+	if ( gViewPort && gHUD.m_iWeaponBits & (1<<(WEAPON_SUIT)) )
+	{
+		CMenuPanel *pNewMenu = NULL;
+
+		pNewMenu = gViewPort->OpenSoinMenu();
+
+		gViewPort->HideCommandMenu();
+
+		pNewMenu->SetMenuID( MENU_SOIN );
+		pNewMenu->SetActive( true );
+
+		gViewPort->m_pCurrentMenu = pNewMenu;
+		gViewPort->m_pCurrentMenu->Open();
+		gViewPort->UpdateCursorState();	
+
+	}
+
+}
+void IN_SoinUp ( void )
+{
+	if ( gViewPort )
+	{
+		gViewPort->HideTopMenu();
+	}
+}
+
+
 /*
 ===============
 CL_KeyState
@@ -802,6 +860,7 @@ int CL_ButtonBits( int bResetState )
 		bits |= IN_SCORE;
 	}
 
+
 	if ( bResetState )
 	{
 		in_attack.state &= ~2;
@@ -818,6 +877,7 @@ int CL_ButtonBits( int bResetState )
 		in_reload.state &= ~2;
 		in_alt1.state &= ~2;
 		in_score.state &= ~2;
+
 	}
 
 	return bits;
@@ -909,6 +969,15 @@ void InitInput (void)
 	gEngfuncs.pfnAddCommand ("-graph", IN_GraphUp);
 	gEngfuncs.pfnAddCommand ("+break",IN_BreakDown);
 	gEngfuncs.pfnAddCommand ("-break",IN_BreakUp);
+
+	// modif de Julien
+
+	gEngfuncs.pfnAddCommand ("+medkit",IN_MedkitDown );
+	gEngfuncs.pfnAddCommand ("-medkit",IN_MedkitUp );
+	gEngfuncs.pfnAddCommand ("+battery",IN_BatteryDown );
+	gEngfuncs.pfnAddCommand ("-battery",IN_BatteryUp );
+	gEngfuncs.pfnAddCommand ("+soin",IN_SoinDown );
+	gEngfuncs.pfnAddCommand ("-soin",IN_SoinUp );
 
 	lookstrafe			= gEngfuncs.pfnRegisterVariable ( "lookstrafe", "0", FCVAR_ARCHIVE );
 	lookspring			= gEngfuncs.pfnRegisterVariable ( "lookspring", "0", FCVAR_ARCHIVE );

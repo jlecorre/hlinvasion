@@ -12,7 +12,6 @@
 *   without written permission from Valve LLC.
 *
 ****/
-#if !defined( OEM_BUILD )
 
 #include "extdll.h"
 #include "util.h"
@@ -22,195 +21,131 @@
 #include "nodes.h"
 #include "player.h"
 #include "gamerules.h"
+#include "soundent.h"
+#include "effects.h"
+#include "rpg.h"
+#include "shake.h"
+
+extern int gmsgRpgViseur;
+extern int gmsgRpgMenu;
+extern int gmsgClientDecal;
+extern int gEvilImpulse101;
+
+extern short g_sModelIndexBlastCircle;
+
+extern void EnvSmokeCreate( const Vector &center, int m_iScale, float m_fFrameRate, int m_iTime, int m_iEndTime );
 
 
-enum rpg_e {
-	RPG_IDLE = 0,
-	RPG_FIDGET,
-	RPG_RELOAD,		// to reload
-	RPG_FIRE2,		// to empty
-	RPG_HOLSTER1,	// loaded
-	RPG_DRAW1,		// loaded
-	RPG_HOLSTER2,	// unloaded
-	RPG_DRAW_UL,	// unloaded
-	RPG_IDLE_UL,	// unloaded idle
-	RPG_FIDGET_UL,	// unloaded fidget
-};
+//------------------------------------------
+//
+// Sauvegardes
+//
+//------------------------------------------
 
+// CRpg
 
-class CLaserSpot : public CBaseEntity
-{
-	void Spawn( void );
-	void Precache( void );
-
-	int	ObjectCaps( void ) { return FCAP_DONT_SAVE; }
-
-public:
-	void Suspend( float flSuspendTime );
-	void EXPORT Revive( void );
-	
-	static CLaserSpot *CreateSpot( void );
-};
-LINK_ENTITY_TO_CLASS( laser_spot, CLaserSpot );
-
-
-class CRpg : public CBasePlayerWeapon
-{
-public:
-	int		Save( CSave &save );
-	int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-
-	void Spawn( void );
-	void Precache( void );
-	void Reload( void );
-	int iItemSlot( void ) { return 4; }
-	int GetItemInfo(ItemInfo *p);
-	int AddToPlayer( CBasePlayer *pPlayer );
-
-	BOOL Deploy( void );
-	BOOL CanHolster( void );
-	void Holster( int skiplocal = 0 );
-
-	void PrimaryAttack( void );
-	void SecondaryAttack( void );
-	void WeaponIdle( void );
-
-	void UpdateSpot( void );
-	BOOL ShouldWeaponIdle( void ) { return TRUE; };
-
-	CLaserSpot *m_pSpot;
-	int m_fSpotActive;
-	int m_cActiveRockets;// how many missiles in flight from this launcher right now?
-
-};
 LINK_ENTITY_TO_CLASS( weapon_rpg, CRpg );
 
 TYPEDESCRIPTION	CRpg::m_SaveData[] = 
 {
-	DEFINE_FIELD( CRpg, m_fSpotActive, FIELD_INTEGER ),
 	DEFINE_FIELD( CRpg, m_cActiveRockets, FIELD_INTEGER ),
-};
-IMPLEMENT_SAVERESTORE( CRpg, CBasePlayerWeapon );
-
-//=========================================================
-//=========================================================
-CLaserSpot *CLaserSpot::CreateSpot( void )
-{
-	CLaserSpot *pSpot = GetClassPtr( (CLaserSpot *)NULL );
-	pSpot->Spawn();
-
-	pSpot->pev->classname = MAKE_STRING("laser_spot");
-
-	return pSpot;
-}
-
-//=========================================================
-//=========================================================
-void CLaserSpot::Spawn( void )
-{
-	Precache( );
-	pev->movetype = MOVETYPE_NONE;
-	pev->solid = SOLID_NOT;
-
-	pev->rendermode = kRenderGlow;
-	pev->renderfx = kRenderFxNoDissipation;
-	pev->renderamt = 255;
-
-	SET_MODEL(ENT(pev), "sprites/laserdot.spr");
-	UTIL_SetOrigin( pev, pev->origin );
-};
-
-//=========================================================
-// Suspend- make the laser sight invisible. 
-//=========================================================
-void CLaserSpot::Suspend( float flSuspendTime )
-{
-	pev->effects |= EF_NODRAW;
-	
-	SetThink( Revive );
-	pev->nextthink = gpGlobals->time + flSuspendTime;
-}
-
-//=========================================================
-// Revive - bring a suspended laser sight back.
-//=========================================================
-void CLaserSpot::Revive( void )
-{
-	pev->effects &= ~EF_NODRAW;
-
-	SetThink( NULL );
-}
-
-void CLaserSpot::Precache( void )
-{
-	PRECACHE_MODEL("sprites/laserdot.spr");
+	DEFINE_FIELD( CRpg, m_pEntityTarget, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CRpg, m_pEntityLocked, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CRpg, m_flLockTime, FIELD_TIME ),
+	DEFINE_FIELD( CRpg, m_iAmmoType, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpg, m_iAmmoRocket, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpg, m_iAmmoElectro, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpg, m_iAmmoNuclear, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpg, m_iMenuState, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpg, m_bLoaded, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRpg, m_bRpgUpdate, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CRpg, m_flReloadTime, FIELD_FLOAT ),
+	DEFINE_FIELD( CRpg, m_flLastBip, FIELD_TIME ),
 };
 
 
+// CRpgRocket
 
-
-
-class CRpgRocket : public CGrenade
-{
-public:
-	int		Save( CSave &save );
-	int		Restore( CRestore &restore );
-	static	TYPEDESCRIPTION m_SaveData[];
-	void Spawn( void );
-	void Precache( void );
-	void EXPORT FollowThink( void );
-	void EXPORT IgniteThink( void );
-	void EXPORT RocketTouch( CBaseEntity *pOther );
-	static CRpgRocket *CreateRpgRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner, CRpg *pLauncher );
-
-	int m_iTrail;
-	float m_flIgniteTime;
-	CRpg *m_pLauncher;// pointer back to the launcher that fired me. 
-};
 LINK_ENTITY_TO_CLASS( rpg_rocket, CRpgRocket );
 
 TYPEDESCRIPTION	CRpgRocket::m_SaveData[] = 
 {
 	DEFINE_FIELD( CRpgRocket, m_flIgniteTime, FIELD_TIME ),
-	DEFINE_FIELD( CRpgRocket, m_pLauncher, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CRpgRocket, m_pTargetMonster, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CRpgRocket, m_iRocketType, FIELD_INTEGER ),
+	DEFINE_FIELD( CRpgRocket, m_flDiskTime, FIELD_TIME ),
+	DEFINE_FIELD( CRpgRocket, m_flLastRadius, FIELD_FLOAT ),
+
 };
 IMPLEMENT_SAVERESTORE( CRpgRocket, CGrenade );
 
-//=========================================================
-//=========================================================
+
+//-------------------------------------------------
+///------------------------------------------------
+//
+// CRpgRocket
+//
+//-------------------------------------------------
+//-------------------------------------------------
+
+
+//------------------------------------------------
+//
+// Creation de la roquette
+//
+//-------------------------------------------------
+
+
 CRpgRocket *CRpgRocket::CreateRpgRocket( Vector vecOrigin, Vector vecAngles, CBaseEntity *pOwner, CRpg *pLauncher )
 {
 	CRpgRocket *pRocket = GetClassPtr( (CRpgRocket *)NULL );
 
 	UTIL_SetOrigin( pRocket->pev, vecOrigin );
 	pRocket->pev->angles = vecAngles;
+
+	if ( pLauncher != NULL )
+	{
+		pRocket->m_pLauncher = pLauncher;// remember what RPG fired me. 
+		pRocket->m_iRocketType = pLauncher->m_iAmmoType;
+	}
+	else
+		pRocket->m_pLauncher = NULL;
+
 	pRocket->Spawn();
 	pRocket->SetTouch( CRpgRocket::RocketTouch );
-	pRocket->m_pLauncher = pLauncher;// remember what RPG fired me. 
-	pRocket->m_pLauncher->m_cActiveRockets++;// register this missile as active for the launcher
-	pRocket->pev->owner = pOwner->edict();
+
+	if ( pOwner != NULL )
+		pRocket->pev->owner = pOwner->edict();
+	else
+		pRocket->pev->owner = NULL;
 
 	return pRocket;
 }
 
-//=========================================================
-//=========================================================
+
 void CRpgRocket :: Spawn( void )
 {
 	Precache( );
-	// motor
+
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->solid = SOLID_BBOX;
 
-	SET_MODEL(ENT(pev), "models/rpgrocket.mdl");
+	// model
+
+	if ( m_iRocketType == AMMO_ELECTRO )
+		SET_MODEL(ENT(pev), "models/rpg_electrocket.mdl" );
+	else if ( m_iRocketType == AMMO_NUCLEAR )
+		SET_MODEL(ENT(pev), "models/rpg_nuclearrocket.mdl" );
+	else
+		SET_MODEL(ENT(pev), "models/rpgrocket.mdl");
+
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 
 	pev->classname = MAKE_STRING("rpg_rocket");
 
 	SetThink( IgniteThink );
-	SetTouch( ExplodeTouch );
+	pev->nextthink = gpGlobals->time + 0.1;		//modif de Julien : 0.4
 
 	pev->angles.x -= 30;
 	UTIL_MakeVectors( pev->angles );
@@ -219,74 +154,326 @@ void CRpgRocket :: Spawn( void )
 	pev->velocity = gpGlobals->v_forward * 250;
 	pev->gravity = 0.5;
 
-	pev->nextthink = gpGlobals->time + 0.4;
 
 	pev->dmg = gSkillData.plrDmgRPG;
+
+	pev->takedamage		= DAMAGE_NO;	// fix bug
 }
 
-//=========================================================
-//=========================================================
-void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
-{
-	if ( m_pLauncher )
-	{
-		// my launcher is still around, tell it I'm dead.
-		m_pLauncher->m_cActiveRockets--;
-	}
 
-	STOP_SOUND( edict(), CHAN_VOICE, "weapons/rocket1.wav" );
-	ExplodeTouch( pOther );
-}
-
-//=========================================================
-//=========================================================
 void CRpgRocket :: Precache( void )
 {
 	PRECACHE_MODEL("models/rpgrocket.mdl");
-	m_iTrail = PRECACHE_MODEL("sprites/smoke.spr");
+	PRECACHE_MODEL("models/rpg_electrocket.mdl");
+	PRECACHE_MODEL("models/rpg_nuclearrocket.mdl");
+
 	PRECACHE_SOUND ("weapons/rocket1.wav");
+	PRECACHE_SOUND ( "weapons/mortarhit.wav" );
+	PRECACHE_SOUND ( "weapons/rpg_electrocket.wav" );
+
+	m_iTrail = PRECACHE_MODEL("sprites/smoke.spr");
+	m_iDiskTexture = PRECACHE_MODEL("sprites/rpg_disk.spr");
+	m_sNuclearSprite = PRECACHE_MODEL("sprites/fexplo.spr");
 }
+
+
+//------------------------------------------------
+//
+// Explosion de la roquette
+//
+//-------------------------------------------------
+
+
+void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
+{
+
+	//modif de Julien
+	if ( m_pTargetMonster != NULL && m_pLauncher && m_pLauncher->m_cActiveRockets == 1 )
+	{
+		if ( pOther == m_pTargetMonster )
+			m_pLauncher->UpdateCrosshair ( RPG_TEXT_TOUCHE );
+		else
+			m_pLauncher->UpdateCrosshair ( RPG_TEXT_MANQUE );
+
+		m_pLauncher->m_cActiveRockets = 0;
+	}
+
+	// enflamme le gaz
+
+	if ( IsInGaz() == TRUE )
+	{
+		edict_t *pFind = FIND_ENTITY_BY_CLASSNAME( NULL, "player" );
+		CBaseEntity *pPlayer = CBaseEntity::Instance ( pFind );
+		pPlayer->m_bFireInGaz = TRUE;
+	}
+
+
+	switch ( m_iRocketType )
+	{
+	case AMMO_ROCKET:
+		{
+			pev->origin = pev->origin - pev->velocity * 0.05;		// revient un peu en arriere pour ne pas exploser du sol
+			ExplodeTouch( pOther );
+			break;
+		}
+
+	case AMMO_ELECTRO:
+		{
+			// truc affreux pour creer une particule a travers ce message pour les decals
+
+			MESSAGE_BEGIN( MSG_ALL, gmsgClientDecal );
+
+				WRITE_COORD( pev->origin.x );			// xyz source
+				WRITE_COORD( pev->origin.y );
+				WRITE_COORD( pev->origin.z );
+				WRITE_COORD( 0 );						// xyz norme
+				WRITE_COORD( 0 );
+				WRITE_COORD( 0 );
+				WRITE_CHAR ( 'a' );						// type de texture
+				WRITE_BYTE ( 4 );						//  4 == electro-rocket
+
+			MESSAGE_END();
+
+			SetThink ( ElectroThink );
+			pev->nextthink	= gpGlobals->time + 0.1;
+			m_flDiskTime	= gpGlobals->time;
+			m_flLastRadius	= 0.0;						// pour coller avec la dll client
+
+			pev->effects = 0;
+
+			UTIL_ScreenFadeAll ( Vector ( 215, 225, 255 ), 0.3, 0, 80, FFADE_IN );
+
+			// fait du bruit pour réveiller les voisins
+
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/rpg_electrocket.wav", 1, ATTN_NONE);
+			
+
+			break;
+		}
+
+	case AMMO_NUCLEAR:
+		{
+			// explosion
+
+			MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_EXPLOSION );		// This makes a dynamic light and the explosion sprites/sound
+				WRITE_COORD( pev->origin.x );	// Send to PAS because of the sound
+				WRITE_COORD( pev->origin.y );
+				WRITE_COORD( pev->origin.z + 200 );
+				WRITE_SHORT( m_sNuclearSprite );
+				WRITE_BYTE( 100  ); // scale * 10
+				WRITE_BYTE( 10  ); // framerate
+				WRITE_BYTE( TE_EXPLFLAG_NONE );
+			MESSAGE_END();
+
+			// cercles
+
+			MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_BEAMCYLINDER );
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z);
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z + 600 * 5 ); // reach damage radius over .3 seconds
+				WRITE_SHORT( g_sModelIndexBlastCircle );
+				WRITE_BYTE( 0 ); // startframe
+				WRITE_BYTE( 0 ); // framerate
+				WRITE_BYTE( 3 ); // life
+				WRITE_BYTE( 128 );  // width
+				WRITE_BYTE( 0 );   // noise
+				WRITE_BYTE( 255   );	// rgb
+				WRITE_BYTE( 255 );
+				WRITE_BYTE( 200  );
+				WRITE_BYTE( 170 ); //brightness
+				WRITE_BYTE( 0 );		// speed
+			MESSAGE_END();
+			MESSAGE_BEGIN( MSG_PAS, SVC_TEMPENTITY, pev->origin );
+				WRITE_BYTE( TE_BEAMCYLINDER );
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z + 32 );
+				WRITE_COORD( pev->origin.x);
+				WRITE_COORD( pev->origin.y);
+				WRITE_COORD( pev->origin.z - 600 * 5 / 2 ); // reach damage radius over .3 seconds
+				WRITE_SHORT( g_sModelIndexBlastCircle );
+				WRITE_BYTE( 0 ); // startframe
+				WRITE_BYTE( 0 ); // framerate
+				WRITE_BYTE( 4 ); // life
+				WRITE_BYTE( 48 );  // width
+				WRITE_BYTE( 0 );   // noise
+				WRITE_BYTE( 255   );	// rgb
+				WRITE_BYTE( 255 );
+				WRITE_BYTE( 200  );
+				WRITE_BYTE( 170 ); //brightness
+				WRITE_BYTE( 0 );		// speed
+			MESSAGE_END();
+
+
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/mortarhit.wav", 1, ATTN_NONE);
+
+
+			UTIL_ScreenFadeAll ( Vector ( 220, 220, 220 ), 0.2, 0.3, 130, FFADE_IN );
+			UTIL_ScreenShakeAll ( pev->origin, 200, 100, 3 );
+
+			CSoundEnt::InsertSound ( bits_SOUND_COMBAT, pev->origin, BIG_EXPLOSION_VOLUME, 3.0 );
+
+			// dommages
+
+			float flRadius = 1000;
+
+			CBaseEntity *pEntity = NULL;
+			float flDamage = 400;
+
+			while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, flRadius )) != NULL)
+			{
+				if ( pEntity->pev->takedamage != DAMAGE_NO )
+				{
+					Vector vecSpot = pEntity->Center();
+					TraceResult tr;
+					UTIL_TraceLine ( pev->origin, vecSpot, dont_ignore_monsters, ENT(pev), &tr );
+
+					if ( tr.flFraction != 1.0 && tr.pHit != pEntity->edict() )
+					{
+						flDamage = flDamage * (pev->origin - vecSpot).Length() /  3 * flRadius;
+					}
+
+					pEntity->TakeDamage ( pev, pev, flDamage, DMG_RADIATION );
+				}
+			}
+
+			SetThink ( SUB_Remove );
+			pev->nextthink = gpGlobals->time + 0.1;
+
+
+			// détection des triggers nuclear
+
+			CBaseEntity *pTrigger = UTIL_FindEntityByClassname ( NULL, "trigger_nuclear" );
+
+			while ( pTrigger != NULL )
+			{
+
+				Vector org = pev->origin, min = pTrigger->pev->absmin, max = pTrigger->pev->absmax;
+
+				if (( org.x > min.x && org.x < max.x ) &&
+					( org.y > min.y && org.y < max.y ) &&
+					( org.z > min.z && org.z < max.z ) )
+				{
+					FireTargets ( STRING(pTrigger->pev->target), this, this, USE_ON, 0 );
+				}
+
+				pTrigger = UTIL_FindEntityByClassname ( pTrigger, "trigger_nuclear" );
+			}
+
+
+
+			break;
+		}
+	}
+
+	pev->movetype	= MOVETYPE_NOCLIP;			// bug de la trainee de fumee rebondissante
+	pev->solid		= SOLID_NOT;
+	pev->velocity	= Vector ( 0,0,0 );
+
+	STOP_SOUND( edict(), CHAN_VOICE, "weapons/rocket1.wav" );
+}
+
+
+int CRpgRocket :: TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType )
+{	return 1;	}
+
+void CRpgRocket :: Killed( entvars_t *pevAttacker, int iGib )
+{	};
+
+
+void CRpgRocket :: ElectroThink ( void )
+{
+	if ( m_flLastRadius > ELECTRO_DISK_MAX )
+	{
+		SetThink ( SUB_Remove );
+		pev->nextthink = gpGlobals->time + 0.1;
+		return;
+	}
+
+	pev->nextthink = gpGlobals->time + 0.1;
+
+	float flRadius = ( gpGlobals->time - m_flDiskTime ) * ELECTRO_DISK_SPEED + 1;	// +1 pour coller avec la dll client
+
+	CBaseEntity *pEntity = NULL;
+	float flDamage = 100;
+
+	while ((pEntity = UTIL_FindEntityInSphere( pEntity, pev->origin, flRadius )) != NULL)
+	{
+		if ( pEntity->pev->takedamage != DAMAGE_NO )
+		{
+			Vector2D vecSpot = ( pev->origin - pEntity->Center() ).Make2D();
+
+			if ( vecSpot.Length() > m_flLastRadius &&
+				 (
+				 ( pEntity->pev->solid == SOLID_BSP && pEntity->pev->mins.z <= pev->origin.z && pEntity->pev->maxs.z >= pev->origin.z )
+				 ||
+				 ( pEntity->pev->solid != SOLID_BSP && pEntity->pev->absmin.z <= pev->origin.z && pEntity->pev->absmax.z >= pev->origin.z )
+				 )
+			   )
+
+			{
+				pEntity->TakeDamage ( pev, pev, flDamage, DMG_SHOCK );
+
+				if ( pEntity->IsPlayer () )
+				{
+					short sens = RANDOM_LONG ( 0, 1 );
+					sens = sens == 0 ? -1 : 1;
+					pEntity->pev->punchangle.y = 25 * sens;
+					pEntity->pev->punchangle.x = 25 * sens;
+				}
+			}	
+		}
+	}
+
+	m_flLastRadius = flRadius;
+}
+
+
+
+//------------------------------------------------
+//
+// Mouvement de la roquette
+//
+//-------------------------------------------------
 
 
 void CRpgRocket :: IgniteThink( void  )
 {
-	// pev->movetype = MOVETYPE_TOSS;
-
 	pev->movetype = MOVETYPE_FLY;
-	pev->effects |= EF_LIGHT;
+
+	if ( m_iRocketType == AMMO_ROCKET )
+		pev->effects |= EF_LIGHT;
 
 	// make rocket sound
 	EMIT_SOUND( ENT(pev), CHAN_VOICE, "weapons/rocket1.wav", 1, 0.5 );
 
-	// rocket trail
-	MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
+	if ( m_iRocketType == AMMO_ROCKET || m_iRocketType == AMMO_ELECTRO )
+	{
+		// rocket trail
+		MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 
-		WRITE_BYTE( TE_BEAMFOLLOW );
-		WRITE_SHORT(entindex());	// entity
-		WRITE_SHORT(m_iTrail );	// model
-		WRITE_BYTE( 40 ); // life
-		WRITE_BYTE( 5 );  // width
-		WRITE_BYTE( 224 );   // r, g, b
-		WRITE_BYTE( 224 );   // r, g, b
-		WRITE_BYTE( 255 );   // r, g, b
-		WRITE_BYTE( 255 );	// brightness
+			WRITE_BYTE( TE_BEAMFOLLOW );
+			WRITE_SHORT(entindex());	// entity
+			WRITE_SHORT(m_iTrail );	// model
+			WRITE_BYTE( 40 ); // life
+			WRITE_BYTE( 5 );  // width
+			WRITE_BYTE( 224 );   // r, g, b
+			WRITE_BYTE( 224 );   // r, g, b
+			WRITE_BYTE( 255 );   // r, g, b
 
-	MESSAGE_END();  // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+			if ( m_iRocketType == AMMO_ROCKET )
+				WRITE_BYTE( 255 );	// brightness
+			else
+				WRITE_BYTE( 100 );	// brightness
 
+		MESSAGE_END();  // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
+	}
 
-
-/*
-	WRITE_BYTE( MSG_BROADCAST, SVC_TEMPENTITY );
-	WRITE_BYTE( MSG_BROADCAST, TE_BEAMFOLLOW);
-		WRITE_SHORT(entindex());	// entity
-	WRITE_SHORT(MSG_BROADCAST, m_iTrail );	// model
-	WRITE_BYTE( MSG_BROADCAST, 40 ); // life
-	WRITE_BYTE( MSG_BROADCAST, 5 );  // width
-	WRITE_BYTE( MSG_BROADCAST, 224 );   // r, g, b
-	WRITE_BYTE( MSG_BROADCAST, 224 );   // r, g, b
-	WRITE_BYTE( MSG_BROADCAST, 255 );   // r, g, b
-	WRITE_BYTE( MSG_BROADCAST, 255 );	// brightness
-*/
 	m_flIgniteTime = gpGlobals->time;
 
 	// set to follow laser spot
@@ -300,29 +487,55 @@ void CRpgRocket :: FollowThink( void  )
 	CBaseEntity *pOther = NULL;
 	Vector vecTarget;
 	Vector vecDir;
-	float flDist, flMax, flDot;
+	Vector angDir;
 	TraceResult tr;
 
 	UTIL_MakeAimVectors( pev->angles );
 
 	vecTarget = gpGlobals->v_forward;
-	flMax = 4096;
 	
-	// Examine all entities within a reasonable radius
-	while ((pOther = UTIL_FindEntityByClassname( pOther, "laser_spot" )) != NULL)
+	if ( m_pTargetMonster != NULL )
 	{
-		UTIL_TraceLine ( pev->origin, pOther->pev->origin, dont_ignore_monsters, ENT(pev), &tr );
-		// ALERT( at_console, "%f\n", tr.flFraction );
+		pOther = m_pTargetMonster;	
+		UTIL_TraceLine ( pev->origin, pOther->Center(), dont_ignore_monsters, ENT(pev), &tr );
+
 		if (tr.flFraction >= 0.90)
 		{
-			vecDir = pOther->pev->origin - pev->origin;
-			flDist = vecDir.Length( );
-			vecDir = vecDir.Normalize( );
-			flDot = DotProduct( gpGlobals->v_forward, vecDir );
-			if ((flDot > 0) && (flDist * (1 - flDot) < flMax))
+			vecDir = ( pOther->Center() - pev->origin ).Normalize();
+			angDir = UTIL_VecToAngles( vecDir );
+
+
+			if ( (CBaseEntity::Instance(pev->owner)) ->IsPlayer() )
+				vecTarget = vecDir/* * 100*/;
+
+			else
 			{
-				flMax = flDist * (1 - flDot);
-				vecTarget = vecDir;
+				float flAngDistX = UTIL_AngleDiff ( angDir.x, pev->angles.x );
+				float flAngDistY = UTIL_AngleDiff ( angDir.y, pev->angles.y );
+
+				if ( fabs(flAngDistX) < 45 && fabs(flAngDistY) < 45 )
+				{
+
+					if ( fabs(flAngDistX) <= 9 && fabs(flAngDistY) <= 9 )
+					{
+						vecTarget = vecDir;
+					}
+					else
+					{
+						angDir = pev->angles;
+						int iSens = flAngDistX > 0 ? 1 : -1;
+						angDir.x = angDir.x + flAngDistX / 2 * iSens;
+						iSens = flAngDistY > 0 ? 1 : -1;
+						angDir.y = angDir.y + flAngDistY / 2 * iSens;
+
+						UTIL_MakeVectors( angDir );
+						vecTarget = gpGlobals->v_forward;
+					}
+				}
+				else
+				{
+					m_pTargetMonster = NULL;
+				}
 			}
 		}
 	}
@@ -364,7 +577,11 @@ void CRpgRocket :: FollowThink( void  )
 			Detonate( );
 		}
 	}
-	// ALERT( at_console, "%.0f\n", flSpeed );
+
+	//modif de JUlien
+
+	if ( CBaseEntity::Instance( pev->owner )->IsPlayer() )
+		CSoundEnt::InsertSound ( bits_SOUND_DANGER, pev->origin, pev->velocity.Length( ), 0.1 );
 
 	pev->nextthink = gpGlobals->time + 0.1;
 }
@@ -372,73 +589,38 @@ void CRpgRocket :: FollowThink( void  )
 
 
 
+//-------------------------------------------------
+//-------------------------------------------------
+///------------------------------------------------
+//
+// CRpg
+//
+//-------------------------------------------------
+//-------------------------------------------------
+//-------------------------------------------------
 
 
-
-
-void CRpg::Reload( void )
-{
-	int iResult;
-
-	if ( m_iClip == 1 )
-	{
-		// don't bother with any of this if don't need to reload.
-		return;
-	}
-
-	// because the RPG waits to autoreload when no missiles are active while  the LTD is on, the
-	// weapons code is constantly calling into this function, but is often denied because 
-	// a) missiles are in flight, but the LTD is on
-	// or
-	// b) player is totally out of ammo and has nothing to switch to, and should be allowed to
-	//    shine the designator around
-	//
-	// Set the next attack time into the future so that WeaponIdle will get called more often
-	// than reload, allowing the RPG LTD to be updated
-	
-	m_flNextPrimaryAttack = gpGlobals->time + 0.5;
-
-	if ( m_cActiveRockets && m_fSpotActive )
-	{
-		// no reloading when there are active missiles tracking the designator.
-		// ward off future autoreload attempts by setting next attack time into the future for a bit. 
-		return;
-	}
-
-	if (m_pSpot && m_fSpotActive)
-	{
-		m_pSpot->Suspend( 2.1 );
-		m_flNextSecondaryAttack = gpGlobals->time + 2.1;
-	}
-
-	if (m_iClip == 0)
-	{
-		iResult = DefaultReload( RPG_MAX_CLIP, RPG_RELOAD, 2 );
-	}
-
-	if (iResult)
-	{
-		m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );
-	}
-}
 
 void CRpg::Spawn( )
 {
 	Precache( );
 	m_iId = WEAPON_RPG;
-
 	SET_MODEL(ENT(pev), "models/w_rpg.mdl");
-	m_fSpotActive = 1;
 
-	if ( g_pGameRules->IsMultiplayer() )
-	{
-		// more default ammo in multiplay. 
-		m_iDefaultAmmo = RPG_DEFAULT_GIVE * 2;
-	}
-	else
-	{
-		m_iDefaultAmmo = RPG_DEFAULT_GIVE;
-	}
+	m_iClip = 1;				// empeche le declenchement du rechargement par la classe mere
+
+	m_iAmmoType = AMMO_ROCKET;
+	m_bLoaded = TRUE;			//pas de rechargement la premiere fois
+	m_flReloadTime = -1;		// -1 = pas en cours de rechargement
+	pev->body = RPG_WEAPON_ROCKET;
+
+	m_iMenuState = 0;
+	m_iMenuState |= ( RPG_MENU_ROCKET_SELECTED | RPG_MENU_ROCKET_EMPTY | RPG_MENU_ELECTRO_EMPTY | RPG_MENU_NUCLEAR_EMPTY );
+
+	m_iDefaultAmmo = RPG_DEFAULT_GIVE;
+
+	m_flLastBip = 0;
+
 
 	FallInit();// get ready to fall down.
 }
@@ -451,19 +633,21 @@ void CRpg::Precache( void )
 	PRECACHE_MODEL("models/p_rpg.mdl");
 
 	PRECACHE_SOUND("items/9mmclip1.wav");
-
-	UTIL_PrecacheOther( "laser_spot" );
-	UTIL_PrecacheOther( "rpg_rocket" );
-
+	PRECACHE_SOUND("sentences/hev_aim_on.wav");
+	PRECACHE_SOUND("sentences/hev_aim_off.wav");
 	PRECACHE_SOUND("weapons/rocketfire1.wav");
 	PRECACHE_SOUND("weapons/glauncher.wav"); // alternative fire sound
+	PRECACHE_SOUND("weapons/rpg_lock03.wav");
+
+	UTIL_PrecacheOther( "rpg_rocket" );
 }
 
+// /give weapon_rpg
 
 int CRpg::GetItemInfo(ItemInfo *p)
 {
 	p->pszName = STRING(pev->classname);
-	p->pszAmmo1 = "rockets";
+	p->pszAmmo1 = NULL;
 	p->iMaxAmmo1 = ROCKET_MAX_CARRY;
 	p->pszAmmo2 = NULL;
 	p->iMaxAmmo2 = -1;
@@ -484,212 +668,753 @@ int CRpg::AddToPlayer( CBasePlayer *pPlayer )
 		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
 			WRITE_BYTE( m_iId );
 		MESSAGE_END();
+
+		m_pPlayer->TextAmmo( TA_RPG );
+
+		// ajoute la première munition
+
+		AddAmmo ( this, AMMO_ROCKET, 1 );
+
 		return TRUE;
 	}
 	return FALSE;
 }
 
+
+//------------------------------------------
+//
+// Draw / Holster
+//
+//------------------------------------------
+
+
+
 BOOL CRpg::Deploy( )
 {
-	if ( m_iClip == 0 )
-	{
-		return DefaultDeploy( "models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW_UL, "rpg" );
-	}
+	// démarrage du hud rpg
+	UpdateMenu ();
 
-	return DefaultDeploy( "models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW1, "rpg" );
+	PlayStateSound ();
+
+	if ( m_iAmmoType == AMMO_ROCKET )
+		UpdateCrosshair ( RPG_CROSSHAIR_EMPTY );
+	else
+		UpdateCrosshair ( RPG_CROSSHAIR_NORMAL );
+
+	m_flReloadTime = -1;		// -1 = pas en cours de rechargement
+
+	// animation
+
+	BOOL bResult = DefaultDeploy( "models/v_rpg.mdl", "models/p_rpg.mdl", RPG_DRAW, "rpg" );
+
+	m_flNextPrimaryAttack = gpGlobals->time + 8 / 5.0;
+	m_flTimeWeaponIdle = gpGlobals->time + 8 / 5.0;
+
+	return bResult;
 }
 
 
 BOOL CRpg::CanHolster( void )
 {
-	if ( m_fSpotActive && m_cActiveRockets )
-	{
-		// can't put away while guiding a missile.
+	if ( m_cActiveRockets )
 		return FALSE;
-	}
-
 	return TRUE;
 }
 
-void CRpg::Holster( int skiplocal /* = 0 */ )
+void CRpg::Holster( int skiplocal )
 {
 	m_fInReload = FALSE;// cancel any reload in progress.
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
-	// m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );
-	SendWeaponAnim( RPG_HOLSTER1 );
-	if (m_pSpot)
-	{
-		m_pSpot->Killed( NULL, GIB_NEVER );
-		m_pSpot = NULL;
-	}
+	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 10, 15 );
+
+	// fermeture du hud rpg
+
+	m_iMenuState |= RPG_CLOSE;
+	UpdateMenu ();
+	m_iMenuState &= ~RPG_CLOSE;
+
 }
 
+
+//------------------------------------------
+//
+// Tirs principal et secondaire
+//
+//------------------------------------------
 
 
 void CRpg::PrimaryAttack()
 {
-	if (m_iClip)
+	// confirmation de la selection
+
+	if ( m_iMenuState & RPG_MENU_ACTIVE )
 	{
+		m_iMenuState &= ~RPG_MENU_ACTIVE;
+		UpdateMenu();
+
+		if ( m_iMenuState & RPG_MENU_ROCKET_SELECTED )
+		{
+			if ( m_iAmmoType != AMMO_ROCKET )
+			{
+				m_bLoaded = FALSE;
+				m_flTimeWeaponIdle = gpGlobals->time - 0.1;
+			}
+			m_iAmmoType = AMMO_ROCKET;
+		}
+		else if ( m_iMenuState & RPG_MENU_ELECTRO_SELECTED )
+		{
+			if ( m_iAmmoType != AMMO_ELECTRO )
+			{
+				m_bLoaded = FALSE;
+				m_flTimeWeaponIdle = gpGlobals->time - 0.1;
+			}
+			m_iAmmoType = AMMO_ELECTRO;
+		}
+		else if ( m_iMenuState & RPG_MENU_NUCLEAR_SELECTED )
+		{
+			if ( m_iAmmoType != AMMO_NUCLEAR )
+			{
+				m_bLoaded = FALSE;
+				m_flTimeWeaponIdle = gpGlobals->time - 0.1;
+			}
+			m_iAmmoType = AMMO_NUCLEAR;
+		}
+
+		// bon viseur !
+
+		if ( m_iAmmoType == AMMO_ROCKET )
+			UpdateCrosshair ( RPG_CROSSHAIR_EMPTY );
+		else
+			UpdateCrosshair ( RPG_CROSSHAIR_NORMAL );
+
+				
+		m_flNextPrimaryAttack = gpGlobals->time + 0.3;
+	}
+
+	// tir
+
+	else if ( m_bLoaded == TRUE &&
+			   ((m_iAmmoType == AMMO_ROCKET		&& m_iAmmoRocket	!= 0) ||
+				(m_iAmmoType == AMMO_ELECTRO	&& m_iAmmoElectro	!= 0) ||
+				(m_iAmmoType == AMMO_NUCLEAR	&& m_iAmmoNuclear	!= 0)  )
+			)
+	{
+
+		// flash et son
+
 		m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
 		m_pPlayer->m_iWeaponFlash = BRIGHT_GUN_FLASH;
+		m_pPlayer->pev->punchangle.x -= 5;
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/rocketfire1.wav", 0.9, ATTN_NORM );
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/glauncher.wav", 0.7, ATTN_NORM );
 
-		SendWeaponAnim( RPG_FIRE2 );
+		// bodygroup
+		pev->body = RPG_WEAPON_EMPTY;
 
-		// player "shoot" animation
+		// animations
+
+		SendWeaponAnim( RPG_FIRE );
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
+
+		// roquette
 
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
 		Vector vecSrc = m_pPlayer->GetGunPosition( ) + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
 		
-		CRpgRocket *pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
+		pRocket = CRpgRocket::CreateRpgRocket( vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this );
+
+		if ( (m_iAmmoType == AMMO_ROCKET)  && ( m_pEntityLocked != NULL ) )
+		{
+			pRocket->m_pTargetMonster = m_pEntityLocked;
+			m_cActiveRockets = 1;
+		}
+		else
+		{
+			pRocket->m_pTargetMonster = NULL;
+			m_cActiveRockets = 0;			// m_cActiveRockets empeche le rechargement
+		}
 
 		UTIL_MakeVectors( m_pPlayer->pev->v_angle );// RpgRocket::Create stomps on globals, so remake.
 		pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct( m_pPlayer->pev->velocity, gpGlobals->v_forward );
 
-		// firing RPG no longer turns on the designator. ALT fire is a toggle switch for the LTD.
-		// Ken signed up for this as a global change (sjb)
+		// munitions
 
-		
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "weapons/rocketfire1.wav", 0.9, ATTN_NORM );
-		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/glauncher.wav", 0.7, ATTN_NORM );
+		m_bLoaded = FALSE;
 
-		m_iClip--; 
-		//m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
+		if ( m_iAmmoType == AMMO_ROCKET )		// A FAIRE  : continuer de remplacer les masks par iammotype
+		{
+			m_iAmmoRocket --;
+
+			if ( m_iAmmoRocket == 0 )
+				m_iMenuState |= RPG_MENU_ROCKET_EMPTY;
+		}
+		else if ( m_iAmmoType == AMMO_ELECTRO )
+		{
+			m_iAmmoElectro --;
+
+			if ( m_iAmmoElectro == 0 )
+				m_iMenuState |= RPG_MENU_ELECTRO_EMPTY;
+		}
+		else if ( m_iAmmoType == AMMO_NUCLEAR )
+		{
+			m_iAmmoNuclear --;
+
+			if ( m_iAmmoNuclear == 0 )
+				m_iMenuState |= RPG_MENU_NUCLEAR_EMPTY;
+		}
+
+		// mise a jour du hud
+
+		UpdateMenu();
+
+		m_pEntityTarget = m_pEntityLocked = NULL;
+		m_flLockTime = 0;
+
+
+		// prochaine attaque
 		
 		m_flNextPrimaryAttack = gpGlobals->time + 1.5;
-		m_flTimeWeaponIdle = gpGlobals->time + 1.5;
-		m_pPlayer->pev->punchangle.x -= 5;
+		m_flTimeWeaponIdle = gpGlobals->time + 1.5;		// weaponidle () declenche le rechargement
 	}
 	else
 	{
 		PlayEmptySound( );
 	}
-	UpdateSpot( );
 }
 
 
 void CRpg::SecondaryAttack()
 {
-	m_fSpotActive = ! m_fSpotActive;
+	// menu
 
-	if (!m_fSpotActive && m_pSpot)
+	if ( !(m_iMenuState & RPG_MENU_ACTIVE) )
+		m_iMenuState |= RPG_MENU_ACTIVE;
+
+	else if ( m_iMenuState & RPG_MENU_ROCKET_SELECTED )
 	{
-		m_pSpot->Killed( NULL, GIB_NORMAL );
-		m_pSpot = NULL;
+		m_iMenuState &= ~RPG_MENU_ROCKET_SELECTED;
+
+		if ( !(m_iMenuState & RPG_MENU_ELECTRO_EMPTY) )
+			m_iMenuState |= RPG_MENU_ELECTRO_SELECTED;
+
+		else if ( !(m_iMenuState & RPG_MENU_NUCLEAR_EMPTY) )
+			m_iMenuState |= RPG_MENU_NUCLEAR_SELECTED;
+
+		else
+			m_iMenuState |= RPG_MENU_ROCKET_SELECTED;
 	}
+
+	else if ( m_iMenuState & RPG_MENU_ELECTRO_SELECTED )
+	{
+		m_iMenuState &= ~RPG_MENU_ELECTRO_SELECTED;
+
+		if ( !(m_iMenuState & RPG_MENU_NUCLEAR_EMPTY) )
+			m_iMenuState |= RPG_MENU_NUCLEAR_SELECTED;
+
+		else if ( !(m_iMenuState & RPG_MENU_ROCKET_EMPTY) )
+			m_iMenuState |= RPG_MENU_ROCKET_SELECTED;
+
+		else
+			m_iMenuState |= RPG_MENU_ELECTRO_SELECTED;
+	}
+
+	else if ( m_iMenuState & RPG_MENU_NUCLEAR_SELECTED )
+	{
+		m_iMenuState &= ~RPG_MENU_NUCLEAR_SELECTED;
+
+		if ( !(m_iMenuState & RPG_MENU_ROCKET_EMPTY) )
+			m_iMenuState |= RPG_MENU_ROCKET_SELECTED;
+
+		else if ( !(m_iMenuState & RPG_MENU_ELECTRO_EMPTY) )
+			m_iMenuState |= RPG_MENU_ELECTRO_SELECTED;
+
+		else
+			m_iMenuState |= RPG_MENU_NUCLEAR_SELECTED;
+	}
+
+	UpdateMenu ();
+	
+	PlayStateSound ();
 
 	m_flNextSecondaryAttack = gpGlobals->time + 0.2;
 }
 
 
+
+//------------------------------------------
+//
+// Rechargement
+//
+//------------------------------------------
+
+
+
+void CRpg::Reload( void )
+{
+	if ( m_cActiveRockets < 0 || m_flTimeWeaponIdle > gpGlobals->time ) // weaponidle () declenche le rechargement
+		return;
+
+	if (	(m_iAmmoType == AMMO_ROCKET		&& m_iAmmoRocket	== 0) ||
+			(m_iAmmoType == AMMO_ELECTRO	&& m_iAmmoElectro	== 0) ||
+			(m_iAmmoType == AMMO_NUCLEAR	&& m_iAmmoNuclear	== 0)  
+		)
+			return;
+
+	// bodygroup
+	// en cas de changement de munition, le bodygroup n'a pas été effacé par weaponidle()
+
+	pev->body = RPG_WEAPON_EMPTY;
+
+	// animations
+
+	int iAnim;
+	switch ( m_iAmmoType )
+	{
+	case AMMO_ROCKET:
+		iAnim = RPG_RELOAD_ROCKET;
+		m_flReloadTime = gpGlobals->time + 2;
+		break;
+
+	case AMMO_ELECTRO:
+		iAnim = RPG_RELOAD_ELECTRO;
+		m_flReloadTime = gpGlobals->time + 4;
+		break;
+
+	case AMMO_NUCLEAR:
+		iAnim = RPG_RELOAD_NUCLEAR;
+		m_flReloadTime = gpGlobals->time + 6;
+		break;
+	}
+
+	SendWeaponAnim( iAnim );
+
+	// validation du rechargement
+
+	m_flTimeWeaponIdle = gpGlobals->time + 10;
+	m_flNextPrimaryAttack = gpGlobals->time + 10;
+
+}
+
 void CRpg::WeaponIdle( void )
 {
-	UpdateSpot( );
+	// rafraichissement des donnees client
+
+	if ( m_bRpgUpdate == 1 )
+	{
+		UpdateMenu ();
+
+		if ( m_iAmmoType == AMMO_ROCKET )
+			UpdateCrosshair ( RPG_CROSSHAIR_EMPTY );
+		else
+			UpdateCrosshair ( RPG_CROSSHAIR_NORMAL );
+
+		m_flTimeWeaponIdle = gpGlobals->time - 0.1;		// pour charger une anim et changer le bodygroup
+		m_bRpgUpdate = 0;		// weaponidle, ca rafraichit, et c'est déjà pas mal
+	}
+
+	// viseur
+
+	if ( (m_iAmmoType == AMMO_ROCKET) && ( m_cActiveRockets == 0 ) )
+		UpdateEntityTarget ();
 
 	ResetEmptySound( );
+
+	// rechargement
+
+	if ( m_flTimeWeaponIdle < gpGlobals->time && m_bLoaded == FALSE && m_flReloadTime == -1 )	// -1 = pas en cours de rechargement
+	{
+		Reload ();
+		return;			// pour ne pas lancer d anim idle
+	}
+
+	else if ( m_bLoaded == FALSE && m_flReloadTime != -1 && m_flReloadTime < gpGlobals->time )
+	{
+		m_bLoaded				= TRUE;
+		m_flReloadTime			= -1;
+		m_flNextPrimaryAttack	= gpGlobals->time;
+		m_flTimeWeaponIdle		= gpGlobals->time;
+	}
+
+	
+	// ajustement du bodygroup
+
+	if ( m_flTimeWeaponIdle <= gpGlobals->time )
+	{
+		int ibody;
+		switch ( m_iAmmoType )
+		{
+		case AMMO_ROCKET:
+			ibody = RPG_WEAPON_ROCKET; break;
+		case AMMO_ELECTRO:
+			ibody = RPG_WEAPON_ELECTRO; break;
+		case AMMO_NUCLEAR:
+			ibody = RPG_WEAPON_NUCLEAR; break;
+		}
+		if ( m_bLoaded == FALSE )
+			ibody = RPG_WEAPON_EMPTY;
+		
+		pev->body = ibody;
+	}
+
+
+
+	// animations idle
 
 	if (m_flTimeWeaponIdle > gpGlobals->time)
 		return;
 
-	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
+	int iAnim;
+	switch ( RANDOM_LONG( 0, 6 ) )
 	{
-		int iAnim;
-		float flRand = RANDOM_FLOAT(0, 1);
-		if (flRand <= 0.75 || m_fSpotActive)
-		{
-			if ( m_iClip == 0 )
-				iAnim = RPG_IDLE_UL;
-			else
-				iAnim = RPG_IDLE;
-
-			m_flTimeWeaponIdle = gpGlobals->time + 90.0 / 15.0;
-		}
-		else
-		{
-			if ( m_iClip == 0 )
-				iAnim = RPG_FIDGET_UL;
-			else
-				iAnim = RPG_FIDGET;
-
-			m_flTimeWeaponIdle = gpGlobals->time + 3.0;
-		}
-
-		SendWeaponAnim( iAnim );
+	case 0:
+		iAnim = RPG_FIDGET;
+		m_flTimeWeaponIdle = gpGlobals->time + 15 / 4.0;
+		break;
+	
+	default:
+		iAnim = RPG_IDLE;
+		m_flTimeWeaponIdle = gpGlobals->time + 15 / 3.0;
+		break;
 	}
+	SendWeaponAnim( iAnim );
+}
+
+
+
+
+void CRpg::UpdateEntityTarget( void )
+{
+	if ( m_iMenuState & RPG_MENU_ACTIVE )
+		return;			// le texte s'affiche et disparait selon la selection
+
+	UTIL_MakeVectors( m_pPlayer->pev->v_angle );
+	Vector vecSrc = m_pPlayer->GetGunPosition( );
+	Vector vecAiming = gpGlobals->v_forward;
+
+	TraceResult tr;
+	UTIL_TraceLine ( vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr );		//tracage du vecteur
+
+
+	if ( tr.pHit && ( CBaseEntity :: Instance ( tr.pHit )) -> MyMonsterPointer() != NULL )
+	{
+
+		// si une entite est touchee et 
+		//que l'entité touchée est un monstre
+
+
+		if ( m_pEntityTarget == NULL || ( m_pEntityTarget != NULL && ( m_pEntityTarget != (CBaseEntity::Instance(tr.pHit)) ) ) )
+		{
+
+			// si il n'y avait pas de cible, on en met une . On met en memoire l heure de reperage de la cible
+			// une cible, mais pas la meme qu avant, ...
+
+			m_pEntityTarget = CBaseEntity::Instance ( tr.pHit );
+			m_pEntityLocked = NULL;
+			m_flLockTime = gpGlobals->time;
+			UpdateCrosshair ( RPG_CROSSHAIR_PROCESS );
+
+			
+			// son
+			EMIT_SOUND ( ENT(pev), CHAN_BODY, "weapons/rpg_lock03.wav", 0.5, ATTN_NORM );
+
+		}
+
+		else if ( ( m_pEntityTarget != NULL ) && ( m_pEntityTarget == (CBaseEntity::Instance(tr.pHit))) && ( gpGlobals->time - m_flLockTime > 1 ) )
+		{
+			// la meme cible pendant 1 sec , on verrouille
+
+			m_pEntityLocked = m_pEntityTarget;
+			UpdateCrosshair ( RPG_CROSSHAIR_LOCKED );
+
+			// son
+			if ( m_flLastBip <= 0 || gpGlobals->time - m_flLastBip >= 0.1 )
+			{
+				EMIT_SOUND ( ENT(pev), CHAN_BODY, "weapons/rpg_lock03.wav", 0.5, ATTN_NORM );
+				m_flLastBip = gpGlobals->time;
+			}
+		}
+		
+	}
+
 	else
 	{
-		m_flTimeWeaponIdle = gpGlobals->time + 1;
+		//si rien n est touche
+
+		UpdateCrosshair ( RPG_CROSSHAIR_EMPTY );
+		m_pEntityTarget = m_pEntityLocked = NULL;
+		m_flLockTime = 0;
 	}
+
 }
 
 
-
-void CRpg::UpdateSpot( void )
+void CRpg :: PlayStateSound ( void )
 {
-	if (m_fSpotActive)
+/*
+	if ( m_iAmmoType == AMMO_ROCKET )
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "sentences/hev_aim_on.wav", 0.9, ATTN_NORM );
+
+	else
+		EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "sentences/hev_aim_off.wav", 0.9, ATTN_NORM );
+*/
+}
+
+//------------------------------------------
+//
+// messages au client
+//
+//------------------------------------------
+
+void CRpg :: UpdateCrosshair ( int crosshair )
+{
+
+	MESSAGE_BEGIN( MSG_ONE, gmsgRpgViseur, NULL, m_pPlayer->pev );
+		WRITE_BYTE( crosshair );
+	MESSAGE_END();
+}
+
+
+void CRpg :: UpdateMenu ( void )
+{
+	MESSAGE_BEGIN( MSG_ONE, gmsgRpgMenu, NULL, m_pPlayer->pev );
+		WRITE_BYTE( m_iMenuState );
+		WRITE_BYTE( m_iAmmoRocket );
+		WRITE_BYTE( m_iAmmoElectro );
+		WRITE_BYTE( m_iAmmoNuclear );
+	MESSAGE_END();
+
+}
+
+
+//------------------------------------------
+//
+// munitions
+//
+//------------------------------------------
+
+
+void CRpg ::  ItemTouch( CBaseEntity *pOther )
+{
+	if ( pOther->IsPlayer() == FALSE )
 	{
-		if (!m_pSpot)
+		return;
+	}
+
+	CBasePlayer *pPlayer = (CBasePlayer*)pOther;
+	CBasePlayerItem *pItem;
+	CRpg *pRpg = NULL;
+
+	for ( int i = 0 ; i < MAX_ITEM_TYPES ; i++ )
+	{
+		pItem = pPlayer->m_rgpPlayerItems[ i ];
+		
+		while (pItem)
 		{
-			m_pSpot = CLaserSpot::CreateSpot();
+			if ( !strcmp( "weapon_rpg", STRING( pItem->pev->classname ) ) )
+			{
+				pRpg = (CRpg*)pItem->GetWeaponPtr();
+				break;
+			}
+			pItem = pItem->m_pNext;
 		}
+	}
 
-		UTIL_MakeVectors( m_pPlayer->pev->v_angle );
-		Vector vecSrc = m_pPlayer->GetGunPosition( );;
-		Vector vecAiming = gpGlobals->v_forward;
+	if ( pRpg == NULL )
+		return;
 
-		TraceResult tr;
-		UTIL_TraceLine ( vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr );
-		
-		// ALERT( "%f %f\n", gpGlobals->v_forward.y, vecAiming.y );
-
-		/*
-		float a = gpGlobals->v_forward.y * vecAiming.y + gpGlobals->v_forward.x * vecAiming.x;
-		m_pPlayer->pev->punchangle.y = acos( a ) * (180 / M_PI);
-		
-		ALERT( at_console, "%f\n", a );
-		*/
-
-		UTIL_SetOrigin( m_pSpot->pev, tr.vecEndPos );
+	if ( pRpg->AddAmmo ( (CBasePlayerWeapon *) pRpg, AMMO_ROCKET, 1 ) )
+	{
+		EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
+		UTIL_Remove( this );
 	}
 }
 
+
+int CRpg::ExtractAmmo( CBasePlayerWeapon *pWeapon )
+{
+//	AddAmmo ( pWeapon, m_iAmmoType, 1 );
+	return 1;
+}
+
+int CRpg::ExtractClipAmmo( CBasePlayerWeapon *pWeapon )
+{
+//	AddAmmo ( pWeapon, m_iAmmoType, 1 );
+	return 1;
+}
+
+BOOL CRpg ::AddAmmo ( CBasePlayerWeapon *pWeapon, int iAmmotype, int iNombre )
+{
+	int *pType;
+	CRpg *pRpg = (CRpg*) pWeapon;
+
+	switch ( iAmmotype )
+	{
+	default:
+	case AMMO_ROCKET:
+		pType = &pRpg->m_iAmmoRocket;
+		pRpg->m_iMenuState &= ~RPG_MENU_ROCKET_EMPTY;
+		break;
+
+	case AMMO_ELECTRO:
+		pType = &pRpg->m_iAmmoElectro;
+		pRpg->m_iMenuState &= ~RPG_MENU_ELECTRO_EMPTY;
+		break;
+
+	case AMMO_NUCLEAR:
+		pType = &pRpg->m_iAmmoNuclear;
+		pRpg->m_iMenuState &= ~RPG_MENU_NUCLEAR_EMPTY;
+		break;
+
+	}
+
+	if ( pType[0] == RPG_MAX_AMMO )
+		return FALSE;
+
+	pType[0] += iNombre;
+
+	if ( m_pPlayer->m_pActiveItem == pWeapon )
+	{
+		pRpg->UpdateMenu();
+	}
+
+	return TRUE;
+}
+
+int CRpg :: GiveAmmo( int iAmount, char *szName, int iMax )
+{
+//	AddAmmo ( this, m_iAmmoType, 1 );
+	return 1;
+}
 
 class CRpgAmmo : public CBasePlayerAmmo
 {
 	void Spawn( void )
 	{ 
 		Precache( );
-		SET_MODEL(ENT(pev), "models/w_rpgammo.mdl");
+
+		if ( FClassnameIs( pev, "ammo_rpgclip" ) )
+			SET_MODEL(ENT(pev), "models/w_rpgclip.mdl");
+		else if ( FClassnameIs( pev, "ammo_rpgelectroclip" ) )
+			SET_MODEL(ENT(pev), "models/w_rpgelectroclip.mdl");
+		else if ( FClassnameIs( pev, "ammo_rpgnuclearclip" ) )
+			SET_MODEL(ENT(pev), "models/w_rpgnuclearclip.mdl");
+
 		CBasePlayerAmmo::Spawn( );
 	}
 	void Precache( void )
 	{
-		PRECACHE_MODEL ("models/w_rpgammo.mdl");
+		PRECACHE_MODEL ("models/w_rpgclip.mdl");
+		PRECACHE_MODEL ("models/w_rpgelectroclip.mdl");
+		PRECACHE_MODEL ("models/w_rpgnuclearclip.mdl");
+
 		PRECACHE_SOUND("items/9mmclip1.wav");
 	}
+
 	BOOL AddAmmo( CBaseEntity *pOther ) 
-	{ 
-		int iGive;
+	{
+		if ( pOther->IsPlayer() == 0 )
+			return FALSE;
 
-		if ( g_pGameRules->IsMultiplayer() )
+		CBasePlayer *pPlayer = (CBasePlayer *) pOther;
+
+		
+		CBasePlayerItem *pItem;
+		CRpg *pRpg = NULL;
+		int i;
+		int fin = 0;
+
+		for ( i = 0 ; i < MAX_ITEM_TYPES ; i++ )
 		{
-			// hand out more ammo per rocket in multiplayer.
-			iGive = AMMO_RPGCLIP_GIVE * 2;
+			pItem = pPlayer->m_rgpPlayerItems[ i ];
+			
+			while (pItem)
+			{
+				if ( !strcmp( "weapon_rpg"/*&pszItemName*/, STRING( pItem->pev->classname ) ) )
+				{
+					fin = 1;
+					pRpg = (CRpg*)pItem->GetWeaponPtr();
+				}
+				pItem = pItem->m_pNext;
+
+				if ( fin )
+					break;
+			}
+
+			if ( fin )
+				break;
 		}
+
+		if ( pRpg == NULL )
+			return FALSE;
+
+		int iAmmotype = 0;
+
+		if ( FClassnameIs( pev, "ammo_rpgclip" ) )
+			iAmmotype = AMMO_ROCKET;
+		else if ( FClassnameIs( pev, "ammo_rpgelectroclip" ) )
+			iAmmotype = AMMO_ELECTRO;
+		else if ( FClassnameIs( pev, "ammo_rpgnuclearclip" ) )
+			iAmmotype = AMMO_NUCLEAR;
 		else
-		{
-			iGive = AMMO_RPGCLIP_GIVE;
-		}
+			return FALSE;
 
-		if (pOther->GiveAmmo( iGive, "rockets", ROCKET_MAX_CARRY ) != -1)
+		if ( pRpg->AddAmmo ( (CBasePlayerWeapon *) pRpg, iAmmotype, 1 ) == TRUE )
 		{
+			// accepté, voit si on peut afficher le texte
+
+			switch ( iAmmotype )
+			{
+			default:
+			case AMMO_ROCKET:
+				break;
+			case AMMO_ELECTRO:
+				pRpg->m_pPlayer->TextAmmo( TA_ELECTROROCKET ); break;
+			case AMMO_NUCLEAR:
+				pRpg->m_pPlayer->TextAmmo( TA_NUCLEARROCKET ); break;
+			}
+
 			EMIT_SOUND(ENT(pev), CHAN_ITEM, "items/9mmclip1.wav", 1, ATTN_NORM);
 			return TRUE;
 		}
-		return FALSE;
+
+		else
+			return FALSE;
 	}
+
 };
 LINK_ENTITY_TO_CLASS( ammo_rpgclip, CRpgAmmo );
+LINK_ENTITY_TO_CLASS( ammo_rpgelectroclip, CRpgAmmo );
+LINK_ENTITY_TO_CLASS( ammo_rpgnuclearclip, CRpgAmmo );
 
-#endif
+
+//------------------------------------------
+//
+// sauvegarde et restauration
+//
+//------------------------------------------
+
+
+int CRpg::Save( CSave &save )
+{
+	if ( !CBasePlayerWeapon::Save(save) )
+		return 0;
+
+	return save.WriteFields( "CRpg", this, m_SaveData, ARRAYSIZE(m_SaveData) );
+}
+
+int CRpg::Restore( CRestore &restore )
+{
+	if ( !CBasePlayerWeapon::Restore(restore) )
+		return 0;
+
+	int status = restore.ReadFields( "CRpg", this, m_SaveData, ARRAYSIZE(m_SaveData) );
+
+	//-----------------------
+
+	m_bRpgUpdate = 1;		// force le rafraichissement des donnees client
+
+	//----------------------
+	return status;
+}
+

@@ -28,15 +28,13 @@
 
 enum shotgun_e {
 	SHOTGUN_IDLE = 0,
+	SHOTGUN_IDLE_DEEP,
+	SHOTGUN_DRAW,
 	SHOTGUN_FIRE,
 	SHOTGUN_FIRE2,
-	SHOTGUN_RELOAD,
-	SHOTGUN_PUMP,
 	SHOTGUN_START_RELOAD,
-	SHOTGUN_DRAW,
-	SHOTGUN_HOLSTER,
-	SHOTGUN_IDLE4,
-	SHOTGUN_IDLE_DEEP
+	SHOTGUN_RELOAD,
+	SHOTGUN_PUMP
 };
 
 class CShotgun : public CBasePlayerWeapon
@@ -125,6 +123,9 @@ int CShotgun::AddToPlayer( CBasePlayer *pPlayer )
 		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
 			WRITE_BYTE( m_iId );
 		MESSAGE_END();
+
+		m_pPlayer->TextAmmo( TA_SHOTGUN );
+
 		return TRUE;
 	}
 	return FALSE;
@@ -177,7 +178,7 @@ void CShotgun::PrimaryAttack()
 	PLAYBACK_EVENT( 0, m_pPlayer->edict(), m_usSingleFire );
 
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+	m_pPlayer->Gunflash ();
 
 	m_iClip--;
 
@@ -235,7 +236,7 @@ void CShotgun::SecondaryAttack( void )
 	PLAYBACK_EVENT( 0, m_pPlayer->edict(), m_usDoubleFire );
 
 	m_pPlayer->m_iWeaponVolume = LOUD_GUN_VOLUME;
-	m_pPlayer->m_iWeaponFlash = NORMAL_GUN_FLASH;
+	m_pPlayer->Gunflash ();
 
 	m_iClip -= 2;
 
@@ -248,12 +249,12 @@ void CShotgun::SecondaryAttack( void )
 	if ( g_pGameRules->IsDeathmatch() )
 	{
 		// tuned for deathmatch
-		m_pPlayer->FireBullets( 8, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT, 0 );
+		m_pPlayer->FireBullets( 8, vecSrc, vecAiming, VECTOR_CONE_DM_DOUBLESHOTGUN, 2048, BULLET_PLAYER_BUCKSHOT_DOUBLE, 0 );
 	}
 	else
 	{
 		// untouched default single player
-		m_pPlayer->FireBullets( 12, vecSrc, vecAiming, VECTOR_CONE_10DEGREES, 2048, BULLET_PLAYER_BUCKSHOT, 0 );
+		m_pPlayer->FireBullets( 12, vecSrc, vecAiming, VECTOR_CONE_10DEGREES, 2048, BULLET_PLAYER_BUCKSHOT_DOUBLE, 0 );
 	}
 
 	if (!m_iClip && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
@@ -369,17 +370,17 @@ void CShotgun::WeaponIdle( void )
 				iAnim = SHOTGUN_IDLE_DEEP;
 				m_flTimeWeaponIdle = gpGlobals->time + (60.0/12.0);// * RANDOM_LONG(2, 5);
 			}
-			else if (flRand <= 0.95)
+			else /*if (flRand <= 0.95)*/
 			{
 				iAnim = SHOTGUN_IDLE;
 				m_flTimeWeaponIdle = gpGlobals->time + (20.0/9.0);
 			}
-			else
+/*			else
 			{
 				iAnim = SHOTGUN_IDLE4;
 				m_flTimeWeaponIdle = gpGlobals->time + (20.0/9.0);
 			}
-			SendWeaponAnim( iAnim );
+*/			SendWeaponAnim( iAnim );
 		}
 	}
 }

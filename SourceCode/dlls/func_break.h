@@ -20,6 +20,14 @@ typedef enum { matGlass = 0, matWood, matMetal, matFlesh, matCinderBlock, matCei
 
 #define	NUM_SHARDS 6 // this many shards spawned when breakable objects break;
 
+
+//modif de Julien
+#define SF_BREAK_L2M2		8
+#define SF_BREAK_INTRO		16
+#define SF_BREAK_TANKTOUCH	32
+#define SF_BREAK_TANKDAMAGE	64
+
+
 class CBreakable : public CBaseDelay
 {
 public:
@@ -69,6 +77,10 @@ public:
 	float		m_angle;
 	int			m_iszGibModel;
 	int			m_iszSpawnObject;
+	
+	// modif de Julien
+	int			m_iszTankPrev;
+	BOOL		CheckTankPrev ( void );
 };
 
 #endif	// FUNC_BREAK_H

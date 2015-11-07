@@ -368,6 +368,10 @@ public:
 	BOOL Deploy( void );
 	void Holster( int skiplocal = 0 );
 	void WeaponIdle( void );
+
+	// modif de Julien
+	int AddToPlayer( CBasePlayer *pPlayer );
+
 };
 LINK_ENTITY_TO_CLASS( weapon_tripmine, CTripmine );
 
@@ -409,13 +413,31 @@ int CTripmine::GetItemInfo(ItemInfo *p)
 	p->iMaxAmmo2 = -1;
 	p->iMaxClip = WEAPON_NOCLIP;
 	p->iSlot = 4;
-	p->iPosition = 2;
+	p->iPosition = 3;
 	p->iId = m_iId = WEAPON_TRIPMINE;
 	p->iWeight = TRIPMINE_WEIGHT;
 	p->iFlags = ITEM_FLAG_LIMITINWORLD | ITEM_FLAG_EXHAUSTIBLE;
 
 	return 1;
 }
+
+
+// modif de julien
+int CTripmine::AddToPlayer( CBasePlayer *pPlayer )
+{
+	if ( CBasePlayerWeapon::AddToPlayer( pPlayer ) )
+	{
+		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
+			WRITE_BYTE( m_iId );
+		MESSAGE_END();
+
+		m_pPlayer->TextAmmo( TA_TRIPMINE );
+
+		return TRUE;
+	}
+	return FALSE;
+}
+
 
 BOOL CTripmine::Deploy( )
 {

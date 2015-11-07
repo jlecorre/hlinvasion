@@ -753,5 +753,14 @@ typedef struct
 	int		hitgroup;		// 0 == generic, non zero is specific body part
 } trace_t;
 
+
+//-----------------------------------
+// modif de Julien
+// electro - rocket
+
+#define ELECTRO_DISK_SPEED		512
+#define ELECTRO_DISK_MAX		300
+
+
 #endif
 

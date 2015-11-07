@@ -159,6 +159,8 @@ public:
 	int		m_cBloodDecals;
 	int		m_material;
 	float	m_lifeTime;
+	//modif de Julien
+	int		m_instant;		// vaut 0 ou 1 si disparait instantanément
 };
 
 

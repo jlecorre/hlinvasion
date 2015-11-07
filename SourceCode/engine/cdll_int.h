@@ -22,6 +22,12 @@
 #ifndef CDLL_INT_H
 #define CDLL_INT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "const.h"
+
 // this file is included by both the engine and the client-dll,
 // so make sure engine declarations aren't done twice
 
@@ -205,12 +211,41 @@ typedef struct cl_enginefuncs_s
 	byte*						(*COM_LoadFile)				( char *path, int usehunk, int *pLength );
 	char*						(*COM_ParseFile)			( char *data, char *token );
 	void						(*COM_FreeFile)				( void *buffer );
-	
+		
 	struct triangleapi_s		*pTriAPI;
 	struct efx_api_s			*pEfxAPI;
 	struct event_api_s			*pEventAPI;
 	struct demo_api_s			*pDemoAPI;
 	struct net_api_s			*pNetAPI;
+	struct IVoiceTweak_s		*pVoiceTweak;
+
+	// returns 1 if the client is a spectator only (connected to a proxy), 0 otherwise or 2 if in dev_overview mode
+	int							( *IsSpectateOnly ) ( void );
+	struct model_s				*( *LoadMapSprite )			( const char *filename );
+
+	// file search functions
+	void						( *COM_AddAppDirectoryToSearchPath ) ( const char *pszBaseDir, const char *appName );
+	int							( *COM_ExpandFilename)				 ( const char *fileName, char *nameOutBuffer, int nameOutBufferSize );
+
+	// User info
+	// playerNum is in the range (1, MaxClients)
+	// returns NULL if player doesn't exit
+	// returns "" if no value is set
+	const char					*( *PlayerInfo_ValueForKey )( int playerNum, const char *key );
+	void						( *PlayerInfo_SetValueForKey )( const char *key, const char *value );
+
+	// Gets a unique ID for the specified player. This is the same even if you see the player on a different server.
+	// iPlayer is an entity index, so client 0 would use iPlayer=1.
+	// Returns false if there is no player on the server in the specified slot.
+	qboolean					(*GetPlayerUniqueID)(int iPlayer, char playerID[16]);
+
+	// TrackerID access
+	int							(*GetTrackerIDForPlayer)(int playerSlot);
+	int							(*GetPlayerForTrackerID)(int trackerID);
+
+	// Same as pfnServerCmd, but the message goes in the unreliable stream so it can't clog the net stream
+	// (but it might not get there).
+	int							( *pfnServerCmdUnreliable )( char *szCmdString );
 } cl_enginefunc_t;
 
 #ifndef IN_BUTTONS_H
@@ -261,5 +296,12 @@ extern void ClientDLL_VGui_ConsolePrint(const char* text);
 extern int ClientDLL_Key_Event( int down, int keynum, const char *pszCurrentBinding );
 extern void ClientDLL_TempEntUpdate( double ft, double ct, double grav, struct tempent_s **ppFreeTE, struct tempent_s **ppActiveTE, int ( *addTEntity )( struct cl_entity_s *pEntity ), void ( *playTESound )( struct tempent_s *pTemp, float damp ) );
 extern struct cl_entity_s *ClientDLL_GetUserEntity( int index );
+extern void ClientDLL_VoiceStatus(int entindex, qboolean bTalking);
+extern void ClientDLL_DirectorEvent(unsigned char command, unsigned int firstObject, unsigned int secondObject, unsigned int flags);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // CDLL_INT_H

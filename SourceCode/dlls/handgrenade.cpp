@@ -50,6 +50,10 @@ public:
 	void WeaponIdle( void );
 	float m_flStartThrow;
 	float m_flReleaseThrow;
+
+	// modif de julien
+	int AddToPlayer( CBasePlayer *pPlayer );
+
 };
 LINK_ENTITY_TO_CLASS( weapon_handgrenade, CHandGrenade );
 
@@ -93,6 +97,23 @@ int CHandGrenade::GetItemInfo(ItemInfo *p)
 }
 
 
+// modif de julien
+int CHandGrenade::AddToPlayer( CBasePlayer *pPlayer )
+{
+	if ( CBasePlayerWeapon::AddToPlayer( pPlayer ) )
+	{
+		MESSAGE_BEGIN( MSG_ONE, gmsgWeapPickup, NULL, pPlayer->pev );
+			WRITE_BYTE( m_iId );
+		MESSAGE_END();
+
+		m_pPlayer->TextAmmo( TA_GRENADE );
+
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
 BOOL CHandGrenade::Deploy( )
 {
 	m_flReleaseThrow = -1;
@@ -105,7 +126,7 @@ BOOL CHandGrenade::CanHolster( void )
 	return ( m_flStartThrow == 0 );
 }
 
-void CHandGrenade::Holster( int skiplocal /* = 0 */ )
+void CHandGrenade::Holster( int skiplocal  )
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])

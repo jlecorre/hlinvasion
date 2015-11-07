@@ -22,11 +22,13 @@
 #include "cl_util.h"
 #include "parsemsg.h"
 
+
 #include <string.h>
 #include <stdio.h>
 
 #include "ammohistory.h"
 #include "vgui_TeamFortressViewport.h"
+
 
 WEAPON *gpActiveSel;	// NULL means off, 1 means just the menu bar, otherwise
 						// this points to the active weapon menu item
@@ -238,6 +240,7 @@ DECLARE_MESSAGE(m_Ammo, WeapPickup);    // flashes a weapon pickup record
 DECLARE_MESSAGE(m_Ammo, HideWeapon);	// hides the weapon, ammo, and crosshair displays temporarily
 DECLARE_MESSAGE(m_Ammo, ItemPickup);
 
+
 DECLARE_COMMAND(m_Ammo, Slot1);
 DECLARE_COMMAND(m_Ammo, Slot2);
 DECLARE_COMMAND(m_Ammo, Slot3);
@@ -269,6 +272,7 @@ int CHudAmmo::Init(void)
 	HOOK_MESSAGE(ItemPickup);
 	HOOK_MESSAGE(HideWeapon);
 	HOOK_MESSAGE(AmmoX);
+
 
 	HOOK_COMMAND("slot1", Slot1);
 	HOOK_COMMAND("slot2", Slot2);
@@ -552,6 +556,8 @@ int CHudAmmo::MsgFunc_HideWeapon( const char *pszName, int iSize, void *pbuf )
 
 	return 1;
 }
+
+
 
 // 
 //  CurWeapon: Update hud state with the current weapon and clip count. Ammo
@@ -844,6 +850,7 @@ int CHudAmmo::Draw(float flTime)
 	// Draw ammo pickup history
 	gHR.DrawAmmoHistory( flTime );
 
+
 	if (!(m_iFlags & HUD_ACTIVE))
 		return 0;
 
@@ -939,6 +946,7 @@ int CHudAmmo::Draw(float flTime)
 			SPR_DrawAdditive(0, x, y - iOffset, &m_pWeapon->rcAmmo2);
 		}
 	}
+
 	return 1;
 }
 
@@ -1025,9 +1033,13 @@ int CHudAmmo::DrawWList(float flTime)
 	else 
 		iActiveSlot = gpActiveSel->iSlot;
 
-	x = 10; //!!!
-	y = 10; //!!!
-	
+//	x = 10; //!!!
+//	y = 10; //!!!
+
+	//modif de Julien
+
+	x = ScreenWidth - 5 * (giBucketWidth + 5);	// haut-gauche du weaponmenu
+	y = 10;
 
 	// Ensure that there are available choices in the active slot
 	if ( iActiveSlot > 0 )
@@ -1047,15 +1059,16 @@ int CHudAmmo::DrawWList(float flTime)
 		UnpackRGB(r,g,b, RGB_YELLOWISH);
 	
 		if ( iActiveSlot == i )
-			a = 255;
+			a = 255;									// Julien - fx amount slot selectionné
 		else
-			a = 192;
+			a = 192;									// Julien - fx amount slot deselectionné
 
 		ScaleColors(r, g, b, 255);
 		SPR_Set(gHUD.GetSprite(m_HUD_bucket0 + i), r, g, b );
 
+
 		// make active slot wide enough to accomodate gun pictures
-		if ( i == iActiveSlot )
+/*		if ( i == iActiveSlot )
 		{
 			WEAPON *p = gWR.GetFirstPos(iActiveSlot);
 			if ( p )
@@ -1066,19 +1079,47 @@ int CHudAmmo::DrawWList(float flTime)
 		else
 			iWidth = giBucketWidth;
 
-		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_bucket0 + i));
-		
-		x += iWidth + 5;
+  		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_bucket0 + i));
+*/
+
+		//-----------------------
+		// modif de Julien
+
+		iWidth = giBucketWidth;
+
+		if ( i == iActiveSlot )
+		{
+			SPR_Set(gHUD.GetSprite(m_HUD_bucket0 + i + 5), r, g, b );
+			SPR_DrawAdditive (
+				0, ScreenWidth - 5 * (giBucketWidth + 5), 10,
+				&gHUD.GetSpriteRect(m_HUD_bucket0 + i + 5)
+				);
+		}
+		else
+		{
+			SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_bucket0 + i));
+		}
+
+		//-----------------
+
+			
+		x += iWidth + 4;
 	}
 
 
 	a = 128; //!!!
-	x = 10;
+//	x = 10;
+
+	// modif de Julien
+	x = ScreenWidth - 5 * (giBucketWidth + 5);	// haut-gauche du weaponmenu
 
 	// Draw all of the buckets
 	for (i = 0; i < MAX_WEAPON_SLOTS; i++)
 	{
-		y = giBucketHeight + 10;
+		//y = giBucketHeight + 10;
+
+		//modif de Julien
+		y = gHUD.GetSpriteRect(m_HUD_bucket0 + i + 5).bottom - gHUD.GetSpriteRect(m_HUD_bucket0 + i + 5).top + 10 + 5;
 
 		// If this is the active slot, draw the bigger pictures,
 		// otherwise just draw boxes
@@ -1134,7 +1175,7 @@ int CHudAmmo::DrawWList(float flTime)
 			x += iWidth + 5;
 
 		}
-		else
+	/*	else
 		{
 			// Draw Row of weapons.
 
@@ -1165,6 +1206,7 @@ int CHudAmmo::DrawWList(float flTime)
 
 			x += giBucketWidth + 5;
 		}
+		*/
 	}	
 
 	return 1;

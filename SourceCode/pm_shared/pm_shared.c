@@ -27,16 +27,25 @@
 #include <stdlib.h> // atoi
 #include <ctype.h>  // isspace
 
-#ifdef CLIENT_DLL
+
+// modif de Julien
+//#ifdef CLIENT_DLL
 	// Spectator Mode
+	#include "..\common\hltv.h"
 	float	vecNewViewAngles[3];
 	float	vecNewViewOrigin[3];
 	int		iHasNewViewAngles;
 	int		iHasNewViewOrigin;
 	int		iIsSpectator;
-#endif
+	unsigned int	uiDirectorFlags;
+
+	int		iJumpSpectator;
+	float	vJumpOrigin[3];
+	float	vJumpAngles[3];
+//#endif
 
 static int pm_shared_initialized = 0;
+void InterpolateAngles( float *start, float *end, float *output, float frac );
 
 #pragma warning( disable : 4305 )
 
@@ -1777,6 +1786,7 @@ void GetChaseOrigin( vec3_t targetangles, int iTargetIndex, vec3_t offset, vec3_
 #endif
 }
 
+
 /*
 ===============
 PM_SpectatorMove
@@ -1792,8 +1802,12 @@ void PM_SpectatorMove (void)
 	float		fmove, smove;
 	vec3_t		wishdir;
 	float		wishspeed;
+	static	vec3_t		lastAngle;
 
 #ifdef CLIENT_DLL
+	vec3_t tempVec;
+	pmtrace_t tr;
+
 	if ( pmove->runfuncs )
 	{
 		// Set spectator flag
@@ -1801,31 +1815,62 @@ void PM_SpectatorMove (void)
 	}
 #endif
 
-	// Are we locked onto a target?
-	if ( pmove->iuser2 )
+	// Are we not roaming and locked onto a target?
+	if ( (pmove->iuser1 != OBS_ROAMING) && pmove->iuser2 )
 	{
 		vec3_t vecViewAngle;
 		vec3_t vecNewOrg;
 		vec3_t vecOffset;
-		int i;
+		
+		int target1,target2 = 0;
 
 		// Find the client this player's targeting
-		for (i = 0; i < pmove->numphysent; i++)
+		for (target1 = 0; target1 < pmove->numphysent; target1++)
 		{
-			if ( pmove->physents[i].info == pmove->iuser2 )
+			if ( pmove->physents[target1].info == pmove->iuser2 )
 				break;
 		}
 
-		if (i == pmove->numphysent)
-			return;
+		if (target1 == pmove->numphysent)
+		{
+#ifdef CLIENT_DLL
+			if ( pmove->runfuncs )
+			{
+				// Force the client to keep last know view
+				VectorCopy( vecNewViewOrigin, pmove->origin );
+				VectorCopy( vecNewViewAngles, pmove->angles );
+				VectorCopy( vec3_origin, pmove->velocity );
+				iHasNewViewAngles = true;
+				iHasNewViewOrigin = true;
+			}
+#endif
+			return;	// if we don't find the observers primary target, stop whole function
+		}
 
 		VectorCopy( vec3_origin, vecOffset );
 
-		// Calculate a camera position based upon the target's origin and angles
-		if (pmove->iuser1 == 1)
+	
+		if ( (pmove->iuser1 == OBS_DIRECTED) && pmove->iuser3 )
 		{
-			// Locked onto the target
-			VectorCopy( pmove->physents[i].angles, vecViewAngle );
+			// find cameras seconds target
+			// Find the client this player's targeting
+			for (target2 = 0; target2 < pmove->numphysent; target2++)
+			{
+				if ( pmove->physents[target2].info == pmove->iuser3 )
+					break;
+			}
+
+			if (target2 == pmove->numphysent)
+			{
+				target2 = -1; // if we didn't found the second target
+			}
+		}
+
+		// Calculate a camera position based upon the target's origin and angles
+		if ( (pmove->iuser1 == OBS_CHASE_LOCKED) )
+		{
+			// use the targets directon as viewangles
+			VectorCopy( pmove->physents[target1].angles, vecViewAngle );
 			vecViewAngle[0] = 0;
 
 #ifdef CLIENT_DLL
@@ -1836,13 +1881,74 @@ void PM_SpectatorMove (void)
 			}
 #endif
 		}
+		else if ( pmove->iuser1 == OBS_DIRECTED )
+		{
+			// use angles between primary and second target as viewangle
+			// tracking also seconds target 
+#ifdef CLIENT_DLL
+			if ( target2 > 0 )
+			{
+				VectorSubtract( pmove->physents[target2].origin, pmove->physents[target1].origin, vecViewAngle );
+				VectorAngles(vecViewAngle, vecViewAngle );
+				vecViewAngle[0] = -vecViewAngle[0];
+
+				if ( uiDirectorFlags & DRC_FLAG_DRAMATIC )
+					vecViewAngle[0]-=12.5f;
+				else
+					vecViewAngle[0]+=12.5f;
+
+				if ( uiDirectorFlags & DRC_FLAG_SIDE )
+					vecViewAngle[1]+=22.5f;
+				else
+					vecViewAngle[1]-=22.5f;
+
+				GetChaseOrigin( vecViewAngle, target1, vecOffset, &tempVec);
+
+				tr = *(pmove->PM_TraceLine( (float *)&tempVec, (float *)&pmove->physents[target2].origin, PM_TRACELINE_PHYSENTSONLY, 2 /*point sized hull*/, -1 ));
+
+				// if second target isn't viewable from this side, choose the other side
+				if ( tr.fraction != 1.0 )
+				{
+					if ( uiDirectorFlags & DRC_FLAG_SIDE )
+						vecViewAngle[1]-=2.0f * 22.5f;
+					else
+						vecViewAngle[1]+=2.0f * 22.5f;
+				}
+			}
+			else
+			{
+				
+				if ( target2 == -1 )
+				{
+					// we had a second target but it disappeard, keep last known view angles
+					VectorCopy( vecNewViewAngles, vecViewAngle );
+
+				}
+				else
+				{	// we have no second target, choose view direction based on
+					// entity/player direction
+					VectorCopy( pmove->physents[target1].angles, vecViewAngle );
+					vecViewAngle[1] *= -0.5f;
+				}
+			}
+
+
+			if ( pmove->runfuncs )
+			{
+				// Force the client to start smoothing both the spectator's origin and angles
+				iIsSpectator |= (SPEC_SMOOTH_ANGLES | SPEC_SMOOTH_ORIGIN);
+				InterpolateAngles( lastAngle, vecViewAngle, vecViewAngle, 0.1f );
+				VectorCopy( vecViewAngle, lastAngle );
+			}
+#endif
+		}
 		else
 		{
 			// Freelooking around the target
 			VectorCopy( pmove->angles, vecViewAngle );
 		}
 
-		GetChaseOrigin( vecViewAngle, i, vecOffset, &vecNewOrg);
+		GetChaseOrigin( vecViewAngle, target1, vecOffset, &vecNewOrg);
 		VectorCopy( vecNewOrg, pmove->origin );
 		VectorCopy( vecViewAngle, pmove->angles );
 		VectorCopy( vec3_origin, pmove->velocity );
@@ -1862,6 +1968,19 @@ void PM_SpectatorMove (void)
 	{
 		// Move around in normal spectator method
 		// friction
+
+		#ifdef CLIENT_DLL
+		// in free roam mode, spectator can jump within level
+		if ( iJumpSpectator )
+		{
+			VectorCopy( vJumpOrigin, pmove->origin );
+			VectorCopy( vJumpAngles, pmove->angles );
+			VectorCopy( vec3_origin, pmove->velocity );
+			iJumpSpectator	= 0;
+			return;
+		}
+		#endif
+
 		speed = Length (pmove->velocity);
 		if (speed < 1)
 		{
@@ -1913,6 +2032,7 @@ void PM_SpectatorMove (void)
 		addspeed = wishspeed - currentspeed;
 		if (addspeed <= 0)
 			return;
+
 		accelspeed = pmove->movevars->accelerate*pmove->frametime*wishspeed;
 		if (accelspeed > addspeed)
 			accelspeed = addspeed;
@@ -1922,6 +2042,7 @@ void PM_SpectatorMove (void)
 
 		// move
 		VectorMA (pmove->origin, pmove->frametime, pmove->velocity, pmove->origin);
+
 	}
 }
 
@@ -1966,6 +2087,50 @@ void PM_FixPlayerCrouchStuck( int direction )
 	VectorCopy( test, pmove->origin ); // Failed
 }
 
+void PM_UnDuck( void )
+{
+	int i;
+	pmtrace_t trace;
+	vec3_t newOrigin;
+
+	VectorCopy( pmove->origin, newOrigin );
+
+	if ( pmove->onground != -1 )
+	{
+		for ( i = 0; i < 3; i++ )
+		{
+			newOrigin[i] += ( pmove->player_mins[1][i] - pmove->player_mins[0][i] );
+		}
+	}
+	
+	trace = pmove->PM_PlayerTrace( newOrigin, newOrigin, PM_NORMAL, -1 );
+
+	if ( !trace.startsolid )
+	{
+		pmove->usehull = 0;
+
+		// Oh, no, changing hulls stuck us into something, try unsticking downward first.
+		trace = pmove->PM_PlayerTrace( newOrigin, newOrigin, PM_NORMAL, -1  );
+		if ( trace.startsolid )
+		{
+			// See if we are stuck?  If so, stay ducked with the duck hull until we have a clear spot
+			//Con_Printf( "unstick got stuck\n" );
+			pmove->usehull = 1;
+			return;
+		}
+
+		pmove->flags &= ~FL_DUCKING;
+		pmove->bInDuck  = false;
+		pmove->view_ofs[2] = VEC_VIEW;
+		pmove->flDuckTime = 0;
+		
+		VectorCopy( newOrigin, pmove->origin );
+
+		// Recatagorize position since ducking can change origin
+		PM_CatagorizePosition();
+	}
+}
+
 void PM_Duck( void )
 {
 	int i;
@@ -1987,15 +2152,26 @@ void PM_Duck( void )
 		pmove->oldbuttons &= ~IN_DUCK;
 	}
 
-	if ( pmove->dead )
+	// Prevent ducking if the iuser3 variable is set
+	if ( pmove->iuser3 || pmove->dead )
+	{
+		// Try to unduck
+		if ( pmove->flags & FL_DUCKING )
+		{
+			PM_UnDuck();
+		}
 		return;
+	}
 
-	if ( ( pmove->cmd.buttons & IN_DUCK ) || ( pmove->bInDuck ) || ( pmove->flags & FL_DUCKING ) )
+	if ( pmove->flags & FL_DUCKING )
 	{
 		pmove->cmd.forwardmove *= 0.333;
 		pmove->cmd.sidemove    *= 0.333;
 		pmove->cmd.upmove      *= 0.333;
+	}
 
+	if ( ( pmove->cmd.buttons & IN_DUCK ) || ( pmove->bInDuck ) || ( pmove->flags & FL_DUCKING ) )
+	{
 		if ( pmove->cmd.buttons & IN_DUCK )
 		{
 			if ( (nButtonPressed & IN_DUCK ) && !( pmove->flags & FL_DUCKING ) )
@@ -2044,45 +2220,8 @@ void PM_Duck( void )
 		}
 		else
 		{
-			pmtrace_t trace;
-			vec3_t newOrigin;
-
-			VectorCopy( pmove->origin, newOrigin );
-
-			if ( pmove->onground != -1 )
-			{
-				for ( i = 0; i < 3; i++ )
-				{
-					newOrigin[i] += ( pmove->player_mins[1][i] - pmove->player_mins[0][i] );
-				}
-			}
-			
-			trace = pmove->PM_PlayerTrace( newOrigin, newOrigin, PM_NORMAL, -1 );
-
-			if ( !trace.startsolid )
-			{
-				pmove->usehull = 0;
-
-				// Oh, no, changing hulls stuck us into something, try unsticking downward first.
-				trace = pmove->PM_PlayerTrace( newOrigin, newOrigin, PM_NORMAL, -1  );
-				if ( trace.startsolid )
-				{
-					// See if we are stuck?  If so, stay ducked with the duck hull until we have a clear spot
-					//Con_Printf( "unstick got stuck\n" );
-					pmove->usehull = 1;
-					return;
-				}
-
-				pmove->flags &= ~FL_DUCKING;
-				pmove->bInDuck  = false;
-				pmove->view_ofs[2] = VEC_VIEW;
-				pmove->flDuckTime = 0;
-				
-				VectorCopy( newOrigin, pmove->origin );
-		
-				// Recatagorize position since ducking can change origin
-				PM_CatagorizePosition();
-			}
+			// Try to unduck
+			PM_UnDuck();
 		}
 	}
 }
@@ -2436,6 +2575,40 @@ void PM_NoClip()
 
 }
 
+// Only allow bunny jumping up to 1.7x server / player maxspeed setting
+#define BUNNYJUMP_MAX_SPEED_FACTOR 1.7f
+
+//-----------------------------------------------------------------------------
+// Purpose: Corrects bunny jumping ( where player initiates a bunny jump before other
+//  movement logic runs, thus making onground == -1 thus making PM_Friction get skipped and
+//  running PM_AirMove, which doesn't crop velocity to maxspeed like the ground / other
+//  movement logic does.
+//-----------------------------------------------------------------------------
+void PM_PreventMegaBunnyJumping( void )
+{
+	// Current player speed
+	float spd;
+	// If we have to crop, apply this cropping fraction to velocity
+	float fraction;
+	// Speed at which bunny jumping is limited
+	float maxscaledspeed;
+
+	maxscaledspeed = BUNNYJUMP_MAX_SPEED_FACTOR * pmove->maxspeed;
+
+	// Don't divide by zero
+	if ( maxscaledspeed <= 0.0f )
+		return;
+
+	spd = Length( pmove->velocity );
+
+	if ( spd <= maxscaledspeed )
+		return;
+
+	fraction = ( maxscaledspeed / spd ) * 0.65; //Returns the modifier for the velocity
+	
+	VectorScale( pmove->velocity, fraction, pmove->velocity ); //Crop it down!.
+}
+
 /*
 =============
 PM_Jump
@@ -2526,6 +2699,8 @@ void PM_Jump (void)
 
 	// In the air now.
     pmove->onground = -1;
+
+	PM_PreventMegaBunnyJumping();
 
 	if ( tfc )
 	{

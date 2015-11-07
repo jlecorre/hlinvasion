@@ -293,7 +293,6 @@ CBaseEntity *FindGlobalEntity( string_t classname, string_t globalname )
 	return pReturn;
 }
 
-
 int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
@@ -402,6 +401,7 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 			}
 		}
 	}
+
 	return 0;
 }
 
@@ -585,6 +585,7 @@ TYPEDESCRIPTION	CBaseEntity::m_SaveData[] =
 	DEFINE_FIELD( CBaseEntity, m_pfnTouch, FIELD_FUNCTION ),
 	DEFINE_FIELD( CBaseEntity, m_pfnUse, FIELD_FUNCTION ),
 	DEFINE_FIELD( CBaseEntity, m_pfnBlocked, FIELD_FUNCTION ),
+	DEFINE_FIELD( CBaseEntity, m_bFireInGaz, FIELD_BOOLEAN ),
 };
 
 
@@ -763,5 +764,9 @@ CBaseEntity * CBaseEntity::Create( char *szName, const Vector &vecOrigin, const 
 	DispatchSpawn( pEntity->edict() );
 	return pEntity;
 }
+
+
+
+
 
 

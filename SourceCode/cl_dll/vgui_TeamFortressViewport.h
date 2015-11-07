@@ -43,6 +43,12 @@ class DragNDropPanel;
 class CTransparentPanel;
 class CClassMenuPanel;
 class CTeamMenuPanel;
+class COrdiMenuPanel;	//modif de Julien
+class COrdiControlPanel;	//modif de Julien
+class CKeypad;	//modif de Julien
+class CSoin;	//modif de Julien
+class CRadio;	//modif de Julien
+
 
 char* GetVGUITGAName(const char *pszName);
 BitmapTGA *LoadTGA( const char* pImageName );
@@ -275,6 +281,24 @@ private:
 	void		 CreateClassMenu( void );
 	CMenuPanel*	 ShowClassMenu( void );
 	void		 CreateSpectatorMenu( void );
+	//modif de Julien
+	void        CreateOrdiMenu( void );
+	CMenuPanel*    ShowOrdiMenu( void );
+	//modif de Julien
+	void        CreateOrdiControl( void );
+	CMenuPanel*    ShowOrdiControl( void );
+	//modif de Julien
+	void        CreateKeypad( void );
+	CMenuPanel*    ShowKeypad( void );
+	//modif de Julien
+	void        CreateSoin( void );
+	CMenuPanel*    ShowSoin( void );
+	//modif de Julien
+	void        CreateRadio( void );
+	CMenuPanel*    ShowRadio( void );
+
+
+
 	
 	// Scheme handler
 	CSchemeManager m_SchemeManager;
@@ -369,6 +393,9 @@ public:
 	int MsgFunc_Feign(const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_Detpack(const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_VGUIMenu(const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_VGUIordi(const char *pszName, int iSize, void *pbuf );//modif de Julien
+	int MsgFunc_Keypad(const char *pszName, int iSize, void *pbuf );//modif de Julien
+	int MsgFunc_Conveyor(const char *pszName, int iSize, void *pbuf );//modif de Julien
 	int MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_BuildSt( const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_RandomPC( const char *pszName, int iSize, void *pbuf );
@@ -388,11 +415,22 @@ public:
 
 	void *operator new( size_t stAllocateBlock );
 
+	// modif de Julien
+
+	CMenuPanel* OpenSoinMenu ( void ) { return ShowSoin(); };
+	CMenuPanel* OpenRadioMenu ( void ) { return ShowRadio(); };
+
 public:
 	// VGUI Menus
 	CMenuPanel		*m_pCurrentMenu;
 	CTeamMenuPanel	*m_pTeamMenu;
 	CClassMenuPanel	*m_pClassMenu;
+	COrdiMenuPanel 	*m_pOrdiMenu;			//modif de Julien
+	COrdiControlPanel 	*m_pOrdiControl; 	//modif de Julien
+	CKeypad		 	*m_pKeypad;			 	//modif de Julien
+	CSoin		 	*m_pSoin;			 	//modif de Julien
+	CRadio		 	*m_pRadio;			 	//modif de Julien
+
 	ScorePanel		*m_pScoreBoard;
 	char			m_szServerName[ MAX_SERVERNAME_LENGTH ];
 };
@@ -400,6 +438,47 @@ public:
 //============================================================
 // Command Menu Button Handlers
 #define MAX_COMMAND_SIZE	256
+
+
+//modif de Julien
+
+class CMenuHandler_OrdiMenu : public ActionSignal
+{
+protected:
+	int m_iType;
+	int m_iMenu;
+	COrdiMenuPanel *m_pPanel;
+
+public:
+	CMenuHandler_OrdiMenu ( int iType, int iMenu, COrdiMenuPanel *pPanel )
+	{
+		m_iType = iType;
+		m_iMenu = iMenu;
+		m_pPanel = pPanel;
+	}
+
+	virtual void actionPerformed(Panel* panel);	//dénifini ds le ordimenu.cpp
+};
+
+//modif de Julien
+
+class CMenuHandler_OrdiControl : public ActionSignal
+{
+protected:
+	COrdiControlPanel *m_pPanel;
+
+public:
+	CMenuHandler_OrdiControl ( COrdiControlPanel *pPanel )
+	{
+		m_pPanel = pPanel;
+	}
+
+	virtual void actionPerformed(Panel* panel);	//dénifini ds le ordicontrol.cpp
+};
+
+
+//=================
+
 
 class CMenuHandler_StringCommand : public ActionSignal
 {
@@ -1251,5 +1330,12 @@ public:
 		FillRGBA(x, iYPos + 5, HealthWidth / 10, gHUD.m_iFontHeight, 255, 160, 0, a);
 	}
 };
+
+#include "vgui_OrdiMenu.h"
+#include "vgui_OrdiControl.h"
+#include "vgui_keypad.h"
+#include "vgui_soin.h"
+#include "vgui_radio.h"
+
 
 #endif

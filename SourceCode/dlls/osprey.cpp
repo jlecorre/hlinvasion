@@ -206,6 +206,7 @@ void COsprey::CommandUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 
 void COsprey :: FindAllThink( void )
 {
+
 	CBaseEntity *pEntity = NULL;
 
 	m_iUnits = 0;
@@ -279,7 +280,6 @@ BOOL COsprey :: HasDead( )
 	return FALSE;
 }
 
-
 CBaseMonster *COsprey :: MakeGrunt( Vector vecSrc )
 {
 	CBaseEntity *pEntity;
@@ -347,6 +347,7 @@ void COsprey :: HoverThink( void )
 
 void COsprey::UpdateGoal( )
 {
+
 	if (m_pGoalEnt)
 	{
 		m_pos1 = m_pos2;
@@ -383,6 +384,7 @@ void COsprey::UpdateGoal( )
 
 void COsprey::FlyThink( void )
 {
+
 	StudioFrameAdvance( );
 	pev->nextthink = gpGlobals->time + 0.1;
 
@@ -392,20 +394,32 @@ void COsprey::FlyThink( void )
 		UpdateGoal( );
 	}
 
-	if (gpGlobals->time > m_startTime + m_dTime)
+	
+
+	if (gpGlobals->time > m_startTime + m_dTime)	// globals time : tps ds le jeu ; start : tps depuis le dernier path_corner ; mdtime : tps estimé pour aller au suivant  tout ca c est le moment ou il atteint le path suivant
 	{
+
+
 		if (m_pGoalEnt->pev->speed == 0)
 		{
+
 			SetThink( DeployThink );
+
 		}
-		do {
+
+		do
+		{
 			m_pGoalEnt = CBaseEntity::Instance( FIND_ENTITY_BY_TARGETNAME ( NULL, STRING( m_pGoalEnt->pev->target ) ) );
-		} while (m_pGoalEnt->pev->speed < 400 && !HasDead());
+		}
+		while (m_pGoalEnt->pev->speed < 400 && !HasDead());		// continue si 1 des grunts est mort
+
+
 		UpdateGoal( );
 	}
 
 	Flight( );
 	ShowDamage( );
+
 }
 
 

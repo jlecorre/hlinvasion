@@ -1113,7 +1113,11 @@ float already_chosen_map;
 #define MENU_CLASSHELP				6
 #define MENU_CLASSHELP2 			7
 #define MENU_REPEATHELP 			8
-
+#define MENU_ORDIMENU				9	//modif de Julien
+#define MENU_ORDICONTROL			10	//modif de Julien
+#define MENU_KEYPAD					11	//modif de Julien
+#define MENU_SOIN					12	//modif de Julien
+#define MENU_RADIO					13	//modif de Julien
 
 
 #define MENU_SPY					12

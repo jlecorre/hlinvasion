@@ -66,6 +66,14 @@ inline struct cvar_s *CVAR_CREATE( const char *cv, const char *val, const int fl
 #define ScreenHeight (gHUD.m_scrinfo.iHeight)
 // ScreenWidth returns the width of the screen, in pixels
 #define ScreenWidth (gHUD.m_scrinfo.iWidth)
+/*
+// Use this to set any co-ords in 640x480 space
+#define XRES(x)		((x)  * ((float)ScreenWidth / 640))
+#define YRES(y)		((y)  * ((float)ScreenHeight / 480))
+*/
+// use this to project world coordinates to screen coordinates
+#define XPROJECT(x)	( (1.0f+(x))*ScreenWidth*0.5f )
+#define YPROJECT(y) ( (1.0f-(y))*ScreenHeight*0.5f )
 
 #define GetScreenInfo (*gEngfuncs.pfnGetScreenInfo)
 #define ServerCmd (*gEngfuncs.pfnServerCmd)
@@ -128,7 +136,7 @@ void ScaleColors( int &r, int &g, int &b, int a );
 #define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
 #define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
 #define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
-#define VectorClear(a) { a[0]=0.0;a[1]=0.0;a[2]=0.0;}
+inline void VectorClear(float *a) { a[0]=0.0;a[1]=0.0;a[2]=0.0;}
 float Length(const float *v);
 void VectorMA (const float *veca, float scale, const float *vecb, float *vecc);
 void VectorScale (const float *in, float scale, float *out);

@@ -47,6 +47,9 @@ DLL_GLOBAL	short	g_sModelIndexBubbles;// holds the index for the bubbles model
 DLL_GLOBAL	short	g_sModelIndexBloodDrop;// holds the sprite index for the initial blood
 DLL_GLOBAL	short	g_sModelIndexBloodSpray;// holds the sprite index for splattered blood
 
+//modif de Julien
+DLL_GLOBAL	short	g_sModelIndexBlastCircle; // sprite de l'onde de choc
+
 ItemInfo CBasePlayerItem::ItemInfoArray[MAX_WEAPONS];
 AmmoInfo CBasePlayerItem::AmmoInfoArray[MAX_AMMO_SLOTS];
 
@@ -176,7 +179,14 @@ void DecalGunshot( TraceResult *pTrace, int iBulletType )
 		case BULLET_PLAYER_MP5:
 		case BULLET_MONSTER_MP5:
 		case BULLET_PLAYER_BUCKSHOT:
+		case BULLET_PLAYER_BUCKSHOT_DOUBLE:
 		case BULLET_PLAYER_357:
+        // modif. de Julien
+		case BULLET_PLAYER_M16:
+		case BULLET_PLAYER_SNIPER:
+		case BULLET_PLAYER_IRGUN:
+		//fin modif.	
+
 		default:
 			// smoke and decal
 			UTIL_GunshotDecalTrace( pTrace, DamageDecal( pEntity, DMG_BULLET ) );
@@ -189,6 +199,87 @@ void DecalGunshot( TraceResult *pTrace, int iBulletType )
 			// wall decal
 			UTIL_DecalTrace( pTrace, DamageDecal( pEntity, DMG_CLUB ) );
 			break;
+		}
+	}
+}
+
+
+//
+// modif de Julien
+//
+// Client Decal
+// active le système de decals et de particules du côté client
+
+extern int gmsgClientDecal;
+
+void ClientDecal ( TraceResult *pTrace, Vector vecSrc, Vector vecEnd, int crowbar = 0 )
+{
+
+	// le worldspawn est compté comme entité ( edict 0 )
+	if ( !UTIL_IsValidEntity( pTrace->pHit ) )
+		return;
+
+	// entites brush-based seulement
+	if ( VARS(pTrace->pHit)->solid == SOLID_BSP || VARS(pTrace->pHit)->movetype == MOVETYPE_PUSHSTEP )
+	{
+
+		// pas sur le tank
+		if ( FClassnameIs ( pTrace->pHit, "vehicle_tank" ))
+			return;
+
+		// trouve la texture touchee
+
+		char chTextureType;
+		char szbuffer[64];
+		const char *pTextureName;
+		float rgfl1[3];
+		float rgfl2[3];
+
+		CBaseEntity *pEntity = CBaseEntity::Instance(pTrace->pHit);
+
+		chTextureType = 0;
+
+		vecSrc.CopyToArray(rgfl1);
+		vecEnd.CopyToArray(rgfl2);
+
+		if (pEntity)
+			pTextureName = TRACE_TEXTURE( ENT(pEntity->pev), rgfl1, rgfl2 );
+		else
+			pTextureName = TRACE_TEXTURE( ENT(0), rgfl1, rgfl2 );
+
+
+		// trouve texture	
+		if ( pTextureName )
+		{
+			if (*pTextureName == '-' || *pTextureName == '+')
+				pTextureName += 2;
+
+			if (*pTextureName == '{' || *pTextureName == '!' || *pTextureName == '~' || *pTextureName == ' ')
+				pTextureName++;
+
+			strcpy(szbuffer, pTextureName);
+			szbuffer[CBTEXTURENAMEMAX - 1] = 0;
+				
+			chTextureType = TEXTURETYPE_Find(szbuffer);
+
+
+			int decal = 1 + crowbar;
+
+			//message au client
+
+			MESSAGE_BEGIN( MSG_ALL, gmsgClientDecal );
+
+				WRITE_COORD( pTrace->vecEndPos.x );					// xyz source
+				WRITE_COORD( pTrace->vecEndPos.y );
+				WRITE_COORD( pTrace->vecEndPos.z );
+				WRITE_COORD( pTrace->vecPlaneNormal.x );	// xyz norme
+				WRITE_COORD( pTrace->vecPlaneNormal.y );
+				WRITE_COORD( pTrace->vecPlaneNormal.z );
+				WRITE_CHAR ( chTextureType );				// type de texture
+				WRITE_BYTE ( decal );						// decal ( 1 == oui ; 2 == crowbar ; 3 == crowbar ; 4 == electro-rocket )
+
+			MESSAGE_END();
+
 		}
 	}
 }
@@ -314,6 +405,7 @@ void W_Precache(void)
 	// common world objects
 	UTIL_PrecacheOther( "item_suit" );
 	UTIL_PrecacheOther( "item_battery" );
+	UTIL_PrecacheOther( "item_healthkit" );	// modif de Julien
 	UTIL_PrecacheOther( "item_antidote" );
 	UTIL_PrecacheOther( "item_security" );
 	UTIL_PrecacheOther( "item_longjump" );
@@ -334,6 +426,37 @@ void W_Precache(void)
 	UTIL_PrecacheOther( "ammo_9mmAR" );
 	UTIL_PrecacheOther( "ammo_ARgrenades" );
 
+	// modif. de Julien
+	//m16
+	UTIL_PrecacheOtherWeapon( "weapon_m16" );
+	UTIL_PrecacheOther( "ammo_m16" );
+
+	//fusil sniper
+	UTIL_PrecacheOtherWeapon( "weapon_fsniper" );
+	UTIL_PrecacheOther( "ammo_fsniper" );
+
+	// fusil infra rouge
+	UTIL_PrecacheOtherWeapon( "weapon_irgun" );
+	UTIL_PrecacheOther( "ammo_irgun" );
+
+	// grenade à fragmentation
+	UTIL_PrecacheOtherWeapon( "weapon_fgrenade" );
+
+	// lance flammes
+	UTIL_PrecacheOtherWeapon( "weapon_lflammes" );
+	UTIL_PrecacheOther( "ammo_lflammes" );
+
+	// supergun
+	UTIL_PrecacheOtherWeapon( "weapon_supergun" );
+	UTIL_PrecacheOther( "ammo_supergun" );
+
+	// briquet
+	UTIL_PrecacheOtherWeapon( "weapon_briquet" );
+
+
+	//fin modif.
+
+
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	// python
 	UTIL_PrecacheOtherWeapon( "weapon_357" );
@@ -351,18 +474,19 @@ void W_Precache(void)
 	UTIL_PrecacheOtherWeapon( "weapon_rpg" );
 	UTIL_PrecacheOther( "ammo_rpgclip" );
 #endif
-
+/*
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	// crossbow
 	UTIL_PrecacheOtherWeapon( "weapon_crossbow" );
 	UTIL_PrecacheOther( "ammo_crossbow" );
 #endif
-
+*/
+	/*
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	// egon
 	UTIL_PrecacheOtherWeapon( "weapon_egon" );
 #endif
-
+*/
 	// tripmine
 	UTIL_PrecacheOtherWeapon( "weapon_tripmine" );
 
@@ -373,17 +497,17 @@ void W_Precache(void)
 
 	// hand grenade
 	UTIL_PrecacheOtherWeapon("weapon_handgrenade");
-
+/*
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	// squeak grenade
 	UTIL_PrecacheOtherWeapon( "weapon_snark" );
 #endif
-
+/*
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	// hornetgun
 	UTIL_PrecacheOtherWeapon( "weapon_hornetgun" );
 #endif
-
+*/
 
 #if !defined( OEM_BUILD ) && !defined( HLDEMO_BUILD )
 	if ( g_pGameRules->IsDeathmatch() )
@@ -402,8 +526,76 @@ void W_Precache(void)
 	g_sModelIndexLaser = PRECACHE_MODEL( (char *)g_pModelNameLaser );
 	g_sModelIndexLaserDot = PRECACHE_MODEL("sprites/laserdot.spr");
 
+	//modif de Julien
+	g_sModelIndexBlastCircle = PRECACHE_MODEL("sprites/white.spr");
+	PRECACHE_MODEL ("sprites/stmbal1.spr");
 
-	// used by explosions
+	//modif de julien - particules pour le client
+
+	PRECACHE_MODEL ("sprites/particules/particule_dirt01.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_dirt02.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_dirt03.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_dirt04.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_dirt05.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_dirt06.spr");
+
+	PRECACHE_MODEL ("sprites/particules/particule_glass01.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_glass02.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_glass03.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_glass04.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_glass05.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_glass06.spr");
+
+	PRECACHE_MODEL ("sprites/particules/particule_metal01.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_metal02.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_metal03.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_metal04.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_metal05.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_metal06.spr");
+
+	PRECACHE_MODEL ("sprites/particules/particule_wood01.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_wood02.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_wood03.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_wood04.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_wood05.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_wood06.spr");
+
+	PRECACHE_MODEL ("sprites/particules/particule_concrete01.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_concrete02.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_concrete03.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_concrete04.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_concrete05.spr");
+	PRECACHE_MODEL ("sprites/particules/particule_concrete06.spr");
+
+	PRECACHE_MODEL ("sprites/particules/particule_xen.spr");
+
+
+// modif de Julien - decals pour le client
+	
+	PRECACHE_MODEL ("sprites/decals/decal_metal01.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_metal02.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_metal03.spr");
+
+	PRECACHE_MODEL ("sprites/decals/decal_dirt01.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_dirt02.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_dirt03.spr");
+
+	PRECACHE_MODEL ("sprites/decals/decal_wood01.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_wood02.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_wood03.spr");
+
+	PRECACHE_MODEL ("sprites/decals/decal_glass01.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_glass02.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_glass03.spr");
+
+	PRECACHE_MODEL ("sprites/decals/decal_concrete01.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_concrete02.spr");
+	PRECACHE_MODEL ("sprites/decals/decal_concrete03.spr");
+
+	PRECACHE_MODEL ("sprites/decals/decal_crowbar01.spr");
+
+
+// used by explosions
 	PRECACHE_MODEL ("models/grenade.mdl");
 	PRECACHE_MODEL ("sprites/explode1.spr");
 
@@ -420,6 +612,8 @@ void W_Precache(void)
 	
 	PRECACHE_SOUND ("items/weapondrop1.wav");// weapon falls to the ground
 
+	PRECACHE_SOUND ("sentences/blip.wav");// modif de Julien
+	PRECACHE_SOUND ("buttons/blip2.wav");// modif de Julien
 }
 
 
@@ -593,6 +787,9 @@ CBaseEntity* CBasePlayerItem::Respawn( void )
 
 void CBasePlayerItem::DefaultTouch( CBaseEntity *pOther )
 {
+	// modif de Julien - la fonction think ne peut etre declaree virtuelle
+	ItemTouch ( pOther );
+
 	// if it's not a player, ignore
 	if ( !pOther->IsPlayer() )
 		return;
@@ -648,7 +845,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		m_fInReload = FALSE;
 	}
 
-	if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) )
+	if ((m_pPlayer->pev->button & IN_ATTACK2) && CanAttack( m_flNextSecondaryAttack, gpGlobals->time, UseDecrement() ) && m_pPlayer->m_iDrivingTank==FALSE )
 	{
 		if ( pszAmmo2() && !m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()] )
 		{
@@ -658,7 +855,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		SecondaryAttack();
 		m_pPlayer->pev->button &= ~IN_ATTACK2;
 	}
-	else if ((m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) )
+	else if ((m_pPlayer->pev->button & IN_ATTACK) && CanAttack( m_flNextPrimaryAttack, gpGlobals->time, UseDecrement() ) && m_pPlayer->m_iDrivingTank==FALSE )
 	{
 		if ( (m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && !m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()] ) )
 		{
@@ -666,6 +863,7 @@ void CBasePlayerWeapon::ItemPostFrame( void )
 		}
 
 		PrimaryAttack();
+
 	}
 	else if ( m_pPlayer->pev->button & IN_RELOAD && iMaxClip() != WEAPON_NOCLIP && !m_fInReload ) 
 	{
@@ -785,7 +983,6 @@ int CBasePlayerWeapon::AddToPlayer( CBasePlayer *pPlayer )
 		m_iPrimaryAmmoType = pPlayer->GetAmmoIndex( pszAmmo1() );
 		m_iSecondaryAmmoType = pPlayer->GetAmmoIndex( pszAmmo2() );
 	}
-
 
 	if (bResult)
 		return AddWeapon( );
@@ -1117,6 +1314,7 @@ void CBasePlayerAmmo :: DefaultTouch( CBaseEntity *pOther )
 //=========================================================
 int CBasePlayerWeapon::ExtractAmmo( CBasePlayerWeapon *pWeapon )
 {
+
 	int			iReturn;
 
 	if ( pszAmmo1() != NULL )

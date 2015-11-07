@@ -29,4 +29,11 @@ char PM_FindTextureType( char *name );
 #define SPEC_SMOOTH_ANGLES		(1<<1)
 #define SPEC_SMOOTH_ORIGIN		(1<<2)
 
+// Spectator Movement modes (stored in pev->iuser1, so the physics code can get at them)
+#define OBS_NONE				0
+#define OBS_CHASE_LOCKED		1
+#define OBS_CHASE_FREE			2
+#define OBS_ROAMING				3		
+#define OBS_DIRECTED			4
+
 #endif

@@ -332,6 +332,12 @@ public:
 	BOOL CineCleanup( );
 
 	CBaseEntity* DropItem ( char *pszItemName, const Vector &vecPos, const Vector &vecAng );// drop an item.
+
+	// modif de Julien
+
+	void	Gunflash ( void );
+	int		m_iHasGibbed;		// pour le démembrage
+
 };
 
 
