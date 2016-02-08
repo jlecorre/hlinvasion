@@ -21,7 +21,8 @@
 #include<VGUI_ScrollPanel.h>
 #include<VGUI_ScrollBar.h>
 #include<VGUI_Slider.h>
-
+#include<VGUI_Cursor.h>
+#include<vgui_loadtga.h>
 // custom scheme handling
 #include "vgui_SchemeManager.h"
 
@@ -51,7 +52,7 @@ class CRadio;	//modif de Julien
 
 
 char* GetVGUITGAName(const char *pszName);
-BitmapTGA *LoadTGA( const char* pImageName );
+BitmapTGA *LoadTGAForRes( const char* pImageName );
 void ScaleColors( int &r, int &g, int &b, int a );
 extern char *sTFClassSelection[];
 extern int sTFValidClassInts[];
@@ -117,6 +118,7 @@ public:
 	BitmapTGA	*m_pTGA;
 
 public:
+	void LoadImage(const char * pImageName);
 	CImageLabel( const char* pImageName,int x,int y );
 	CImageLabel( const char* pImageName,int x,int y,int wide,int tall );
 
@@ -299,6 +301,7 @@ private:
 
 
 
+
 	
 	// Scheme handler
 	CSchemeManager m_SchemeManager;
@@ -419,6 +422,13 @@ public:
 
 	CMenuPanel* OpenSoinMenu ( void ) { return ShowSoin(); };
 	CMenuPanel* OpenRadioMenu ( void ) { return ShowRadio(); };
+
+	//@linux
+	CImageLabel* mCustomCursor;
+	void ShowMouse(bool visible);
+	void CreateMouse();
+	void SetMousePos(int x ,int y);
+	void UpdateCursor();
 
 public:
 	// VGUI Menus

@@ -77,7 +77,7 @@ void CMiroir :: Spawn( void )
 
 	m_iPosition = MIROIR_MAX_SEQ-1;
 
-	SetUse ( UseMiroir );
+	SetUse ( &CMiroir::UseMiroir );
 
 	// initialisation de l'anim
 	UseMiroir ( this,this, USE_ON, 0 );

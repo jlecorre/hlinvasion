@@ -21,7 +21,9 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "netadr.h"
-#include "vgui_schememanager.h"
+#undef INTERFACE_H
+#include "../public/interface.h"
+//#include "vgui_schememanager.h"
 
 extern "C"
 {
@@ -31,8 +33,18 @@ extern "C"
 #include <string.h>
 #include "hud_servers.h"
 #include "vgui_int.h"
+#include "interface.h"
 
-#define DLLEXPORT __declspec( dllexport )
+#ifdef _WIN32
+#include "winsani_in.h"
+#include <windows.h>
+#include "winsani_out.h"
+#endif
+#include "Exports.h"
+#
+#include "tri.h"
+#include "vgui_TeamFortressViewport.h"
+#include "../public/interface.h"
 
 cl_enginefunc_t gEngfuncs;
 CHud gHUD;
@@ -41,28 +53,6 @@ TeamFortressViewport *gViewPort = NULL;
 void InitInput (void);
 void EV_HookEvents( void );
 void IN_Commands( void );
-/*
-========================== 
-    Initialize
-
-Called when the DLL is first loaded.
-==========================
-*/
-extern "C" 
-{
-int DLLEXPORT Initialize( cl_enginefunc_t *pEnginefuncs, int iVersion );
-int DLLEXPORT HUD_VidInit( void );
-int DLLEXPORT HUD_Init( void );
-int DLLEXPORT HUD_Redraw( float flTime, int intermission );
-int DLLEXPORT HUD_UpdateClientData( client_data_t *cdata, float flTime );
-int DLLEXPORT HUD_Reset ( void );
-void DLLEXPORT HUD_PlayerMove( struct playermove_s *ppmove, int server );
-void DLLEXPORT HUD_PlayerMoveInit( struct playermove_s *ppmove );
-char DLLEXPORT HUD_PlayerMoveTexture( char *name );
-int DLLEXPORT HUD_ConnectionlessPacket( struct netadr_s *net_from, const char *args, char *response_buffer, int *response_buffer_size );
-int DLLEXPORT HUD_GetHullBounds( int hullnumber, float *mins, float *maxs );
-void DLLEXPORT HUD_Frame( double time );
-}
 
 /*
 ================================
@@ -71,8 +61,10 @@ HUD_GetHullBounds
   Engine calls this to enumerate player collision hulls, for prediction.  Return 0 if the hullnumber doesn't exist.
 ================================
 */
-int DLLEXPORT HUD_GetHullBounds( int hullnumber, float *mins, float *maxs )
+int CL_DLLEXPORT HUD_GetHullBounds( int hullnumber, float *mins, float *maxs )
 {
+//	RecClGetHullBounds(hullnumber, mins, maxs);
+
 	int iret = 0;
 
 	switch ( hullnumber )
@@ -105,8 +97,10 @@ HUD_ConnectionlessPacket
   size of the response_buffer, so you must zero it out if you choose not to respond.
 ================================
 */
-int	DLLEXPORT HUD_ConnectionlessPacket( struct netadr_s *net_from, const char *args, char *response_buffer, int *response_buffer_size )
+int	CL_DLLEXPORT HUD_ConnectionlessPacket( const struct netadr_s *net_from, const char *args, char *response_buffer, int *response_buffer_size )
 {
+//	RecClConnectionlessPacket(net_from, args, response_buffer, response_buffer_size);
+
 	// Parse stuff from args
 	int max_buffer_size = *response_buffer_size;
 
@@ -119,28 +113,32 @@ int	DLLEXPORT HUD_ConnectionlessPacket( struct netadr_s *net_from, const char *a
 	return 0;
 }
 
-void DLLEXPORT HUD_PlayerMoveInit( struct playermove_s *ppmove )
+void CL_DLLEXPORT HUD_PlayerMoveInit( struct playermove_s *ppmove )
 {
+//	RecClClientMoveInit(ppmove);
+
 	PM_Init( ppmove );
 }
 
-char DLLEXPORT HUD_PlayerMoveTexture( char *name )
+char CL_DLLEXPORT HUD_PlayerMoveTexture( char *name )
 {
+//	RecClClientTextureType(name);
+
 	return PM_FindTextureType( name );
 }
 
-void DLLEXPORT HUD_PlayerMove( struct playermove_s *ppmove, int server )
+void CL_DLLEXPORT HUD_PlayerMove( struct playermove_s *ppmove, int server )
 {
+//	RecClClientMove(ppmove, server);
+
 	PM_Move( ppmove, server );
 }
 
-int DLLEXPORT Initialize( cl_enginefunc_t *pEnginefuncs, int iVersion )
+int CL_DLLEXPORT Initialize( cl_enginefunc_t *pEnginefuncs, int iVersion )
 {
 	gEngfuncs = *pEnginefuncs;
 
-	//!!! mwh UNDONE We need to think about our versioning strategy. Do we want to try to be compatible
-	// with previous versions, especially when we're only 'bonus' functionality? Should it be the engine
-	// that decides if the DLL is compliant?
+//	RecClInitialize(pEnginefuncs, iVersion);
 
 	if (iVersion != CLDLL_INTERFACE_VERSION)
 		return 0;
@@ -149,6 +147,7 @@ int DLLEXPORT Initialize( cl_enginefunc_t *pEnginefuncs, int iVersion )
 
 	EV_HookEvents();
 
+	// get tracker interface, if any
 	return 1;
 }
 
@@ -163,8 +162,9 @@ so the HUD can reinitialize itself.
 ==========================
 */
 
-int DLLEXPORT HUD_VidInit( void )
+int CL_DLLEXPORT HUD_VidInit( void )
 {
+//	RecClHudVidInit();
 	gHUD.VidInit();
 
 	VGui_Startup();
@@ -182,13 +182,12 @@ the hud variables.
 ==========================
 */
 
-int DLLEXPORT HUD_Init( void )
+void CL_DLLEXPORT HUD_Init( void )
 {
+//	RecClHudInit();
 	InitInput();
 	gHUD.Init();
 	Scheme_Init();
-
-	return 1;
 }
 
 
@@ -201,8 +200,10 @@ redraw the HUD.
 ===========================
 */
 
-int DLLEXPORT HUD_Redraw( float time, int intermission )
+int CL_DLLEXPORT HUD_Redraw( float time, int intermission )
 {
+//	RecClHudRedraw(time, intermission);
+
 	gHUD.Redraw( time, intermission );
 
 	return 1;
@@ -222,8 +223,10 @@ returns 1 if anything has been changed, 0 otherwise.
 ==========================
 */
 
-int DLLEXPORT HUD_UpdateClientData(client_data_t *pcldata, float flTime )
+int CL_DLLEXPORT HUD_UpdateClientData(client_data_t *pcldata, float flTime )
 {
+//	RecClHudUpdateClientData(pcldata, flTime);
+
 	IN_Commands();
 
 	return gHUD.UpdateClientData(pcldata, flTime );
@@ -237,10 +240,11 @@ Called at start and end of demos to restore to "non"HUD state.
 ==========================
 */
 
-int DLLEXPORT HUD_Reset( void )
+void CL_DLLEXPORT HUD_Reset( void )
 {
+//	RecClHudReset();
+
 	gHUD.VidInit();
-	return 1;
 }
 
 /*
@@ -251,7 +255,9 @@ Called by engine every frame that client .dll is loaded
 ==========================
 */
 
-void DLLEXPORT HUD_Frame( double time )
+void CL_DLLEXPORT HUD_Frame( double time )
 {
+//	RecClHudFrame(time);
+
 	ServersThink( time );
 }

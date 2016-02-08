@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -295,13 +295,18 @@ void CBaseAnimating :: SetSequenceBox( void )
 					transformed.y = xvector.y*base.x + yvector.y*base.y;
 					transformed.z = base.z;
 					
-					for ( int l = 0; l < 3; l++ )
-					{
-						if (transformed[l] < rmin[l])
-							rmin[l] = transformed[l];
-						if (transformed[l] > rmax[l])
-							rmax[l] = transformed[l];
-					}
+					if (transformed.x < rmin.x)
+						rmin.x = transformed.x;
+					if (transformed.x > rmax.x)
+						rmax.x = transformed.x;
+					if (transformed.y < rmin.y)
+						rmin.y = transformed.y;
+					if (transformed.y > rmax.y)
+						rmax.y = transformed.y;
+					if (transformed.z < rmin.z)
+						rmin.z = transformed.z;
+					if (transformed.z > rmax.z)
+						rmax.z = transformed.z;
 				}
 			}
 		}

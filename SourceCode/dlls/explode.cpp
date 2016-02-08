@@ -130,7 +130,7 @@ void CEnvExplosion::Spawn( void )
 	// modif de Julien
 	if ( FStrEq(STRING(gpGlobals->mapname), "l3m2") || FStrEq(STRING(gpGlobals->mapname), "L3M2") )
 	{
-		SetThink ( SUB_Remove );
+		SetThink ( &CEnvExplosion::SUB_Remove );
 		pev->nextthink = gpGlobals->time +0.1;
 		return;
 	}
@@ -238,7 +238,7 @@ void CEnvExplosion::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 			RadiusDamage ( pev, pev, m_iMagnitude, CLASS_NONE, DMG_BLAST );
 	}
 
-	SetThink( Smoke );
+	SetThink( &CEnvExplosion::Smoke );
 	pev->nextthink = gpGlobals->time + 0.3;
 
 	// draw sparks
@@ -342,12 +342,13 @@ void ExplosionCreate( const Vector &center, const Vector &angles, edict_t *pOwne
 
 	CEnvExplosion *pExp = (CEnvExplosion*) pExplosion;
 
-	pExp->SetThink ( pExp->ExplodeDelay );
+	pExp->SetThink ( &CEnvExplosion::ExplodeDelay );
 	pExp->pev->nextthink = gpGlobals->time + flDelay;
 
 
 	// modif de julien // pExplosion->Use( NULL, NULL, USE_TOGGLE, 0 );
 }
+
 
 
 // modif de julien
@@ -376,7 +377,7 @@ void CEnvShower::Spawn( void )
 	pev->solid = SOLID_NOT;
 	pev->effects |= EF_NODRAW;
 
-	SetUse ( UseShower );
+	SetUse ( &CEnvShower::UseShower );
 }
 
 void CEnvShower :: UseShower ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )

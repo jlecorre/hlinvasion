@@ -78,16 +78,21 @@ public:
 	void keyFocusTicked(Panel* panel) {};
 
 	void cursorMoved(int x,int y,Panel* panel) { m_iX = x ; m_iY = y; };
+	//void cursorMoved(int x,int y,Panel* panel) {};
 	void mousePressed(MouseCode code,Panel* panel);
 
 };
 
-
-void	CHandler_Keypad :: mousePressed(MouseCode code,Panel* panel)
+void CHandler_Keypad :: mousePressed(MouseCode code,Panel* panel)
 { 
 
 	int colone = 0;
 	int ligne = 0;
+
+ 	char str[80];
+
+   sprintf(str, "x = %d ### y = %d", m_iX, m_iY);
+   puts(str);
 
 	if ( m_iX > COLONE_3 && m_iX < COLONE_3 + BUTTON_X )
 		colone = 3;
@@ -165,7 +170,7 @@ void	CHandler_Keypad :: mousePressed(MouseCode code,Panel* panel)
 		sprintf ( buf, "%i", number );
 
 
-		p->m_pDigit [pos]-> m_pTGA = LoadTGA(buf);
+		p->m_pDigit [pos]-> m_pTGA = LoadTGAForRes(buf);
 		p->m_pDigit [pos]->setImage( p->m_pDigit [pos]->m_pTGA );
 
 
@@ -241,17 +246,17 @@ void CKeypad::Initialize( void )
 {
 	for (int i=0; i<4; i++ )
 	{
-		if ( m_pDigit[i] != NULL )
+		/*if ( m_pDigit[i] != NULL )
 		{
-			m_pDigit [i]-> m_pTGA = LoadTGA("");
+			m_pDigit [i]-> m_pTGA = LoadTGAForRes("placeholder");
 			m_pDigit [i]->setImage( 	m_pDigit [i]->m_pTGA );
 		}
 
 		else
-		{
+		{*/
 			m_pDigit [i] = new CImageLabel( "", DIGIT_LEFT + i * DIGIT_WIDTH, DIGIT_TOP );
 			m_pDigit [i]->setParent ( this );
-		}
+		//}
 	}
 
 	for ( i=0; i<4; i++ )

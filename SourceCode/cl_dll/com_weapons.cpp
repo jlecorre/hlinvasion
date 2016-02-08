@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -133,7 +133,7 @@ void HUD_PlaybackEvent( int flags, const edict_t *pInvoker, unsigned short event
 	vec3_t ang;
 
 	if ( !g_runfuncs || !g_finalstate )
-		return;
+	     return;
 
 	// Weapon prediction events are assumed to occur at the player's origin
 	org			= g_finalstate->playerstate.origin;
@@ -273,5 +273,5 @@ stub functions for such things as precaching.  So we don't have to modify weapon
 int				stub_PrecacheModel		( char* s ) { return 0; }
 int				stub_PrecacheSound		( char* s ) { return 0; }
 unsigned short	stub_PrecacheEvent		( int type, const char *s ) { return 0; }
-const char		*stub_NameForFunction	( unsigned long function ) { return "func"; }
+const char		*stub_NameForFunction	( uint32 function ) { return "func"; }
 void			stub_SetModel			( edict_t *e, const char *m ) {}

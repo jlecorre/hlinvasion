@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -963,6 +963,9 @@ void CreateDirectLights (void)
 			}
 			else
 			{	// point down angle
+				vec3_t vAngles;
+				GetVectorForKey( e, "angles", vAngles );
+
 				angle = (float)FloatForKey (e, "angle");
 				if (angle == ANGLE_UP)
 				{
@@ -976,12 +979,23 @@ void CreateDirectLights (void)
 				}
 				else
 				{
+					// if we don't have a specific "angle" use the "angles" YAW
+					if ( !angle )
+					{
+						angle = vAngles[1];
+					}
+
 					dl->normal[2] = 0;
 					dl->normal[0] = (float)cos (angle/180*Q_PI);
 					dl->normal[1] = (float)sin (angle/180*Q_PI);
 				}
 
 				angle = FloatForKey (e, "pitch");
+				if ( !angle )
+				{
+					// if we don't have a specific "pitch" use the "angles" PITCH
+					angle = vAngles[0];
+				}
 
 				dl->normal[2] = (float)sin(angle/180*Q_PI);
 				dl->normal[0] *= (float)cos(angle/180*Q_PI);

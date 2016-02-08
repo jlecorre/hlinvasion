@@ -24,6 +24,10 @@
 #include "talkmonster.h"
 #include "gamerules.h"
 
+#if !defined ( _WIN32 )
+#include <ctype.h>
+#endif
+
 
 static char *memfgets( byte *pMemFile, int fileSize, int &filePos, char *pBuffer, int bufferSize );
 
@@ -193,7 +197,7 @@ void CAmbientGeneric :: Spawn( void )
 	{
 		ALERT( at_error, "EMPTY AMBIENT AT: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z );
 		pev->nextthink = gpGlobals->time + 0.1;
-		SetThink( SUB_Remove );
+		SetThink( &CAmbientGeneric::SUB_Remove );
 		return;
 	}
     pev->solid		= SOLID_NOT;
@@ -203,12 +207,12 @@ void CAmbientGeneric :: Spawn( void )
 	// of ambient sound's pitch or volume. Don't
 	// start thinking yet.
 
-	SetThink(RampThink);
+	SetThink(&CAmbientGeneric::RampThink);
 	pev->nextthink = 0;
 
 	// allow on/off switching via 'use' function.
 
-	SetUse ( ToggleUse );
+	SetUse ( &CAmbientGeneric::ToggleUse );
 	
 	m_fActive = FALSE;
 
@@ -1064,7 +1068,7 @@ int USENTENCEG_PickSequential(int isentenceg, char *szfound, int ipick, int fres
 
 	strcpy(szfound, "!");
 	strcat(szfound, szgroupname);
-	itoa(ipick, sznum, 10);
+	sprintf(sznum, "%d", ipick);
 	strcat(szfound, sznum);
 	
 	if (ipick >= count)
@@ -1126,7 +1130,7 @@ int USENTENCEG_Pick(int isentenceg, char *szfound)
 		{
 			strcpy(szfound, "!");
 			strcat(szfound, szgroupname);
-			itoa(ipick, sznum, 10);
+			sprintf(sznum, "%d", ipick);
 			strcat(szfound, sznum);
 			return ipick;
 		}
@@ -1250,7 +1254,7 @@ void SENTENCEG_Stop(edict_t *entity, int isentenceg, int ipick)
 	
 	strcpy(buffer, "!");
 	strcat(buffer, rgsentenceg[isentenceg].szgroupname);
-	itoa(ipick, sznum, 10);
+	sprintf(sznum, "%d", ipick);
 	strcat(buffer, sznum);
 
 	STOP_SOUND(entity, CHAN_VOICE, buffer);
@@ -1400,7 +1404,7 @@ int SENTENCEG_Lookup(const char *sample, char *sentencenum)
 			if (sentencenum)
 			{
 				strcpy(sentencenum, "!");
-				itoa(i, sznum, 10);
+				sprintf(sznum, "%d", i);
 				strcat(sentencenum, sznum);
 			}
 			return i;
@@ -1541,7 +1545,7 @@ void TEXTURETYPE_Init()
 	char buffer[512];
 	int i, j;
 	byte *pMemFile;
-	int fileSize, filePos;
+	int fileSize, filePos = 0;
 
 	if (fTextureTypeInit)
 		return;
@@ -1612,7 +1616,7 @@ char TEXTURETYPE_Find(char *name)
 
 	for (int i = 0; i < gcTextures; i++)
 	{
-		if (!_strnicmp(name, &(grgszTextureName[i][0]), CBTEXTURENAMEMAX-1))
+		if (!strnicmp(name, &(grgszTextureName[i][0]), CBTEXTURENAMEMAX-1))
 			return (grgchTextureType[i]);
 	}
 
@@ -1828,19 +1832,19 @@ void CSpeaker :: Spawn( void )
 	{
 		ALERT( at_error, "SPEAKER with no Level/Sentence! at: %f, %f, %f\n", pev->origin.x, pev->origin.y, pev->origin.z );
 		pev->nextthink = gpGlobals->time + 0.1;
-		SetThink( SUB_Remove );
+		SetThink( &CSpeaker::SUB_Remove );
 		return;
 	}
     pev->solid		= SOLID_NOT;
     pev->movetype	= MOVETYPE_NONE;
 
 	
-	SetThink(SpeakerThink);
+	SetThink(&CSpeaker::SpeakerThink);
 	pev->nextthink = 0.0;
 
 	// allow on/off switching via 'use' function.
 
-	SetUse ( ToggleUse );
+	SetUse ( &CSpeaker::ToggleUse );
 
 	Precache( );
 }

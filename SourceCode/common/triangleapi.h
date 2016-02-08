@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -14,7 +14,9 @@
 ****/
 #if !defined( TRIANGLEAPIH )
 #define TRIANGLEAPIH
+#ifdef _WIN32
 #pragma once
+#endif
 
 typedef enum 
 {
@@ -49,12 +51,13 @@ typedef struct triangleapi_s
 	void		( *CullFace ) ( TRICULLSTYLE style );
 	int			( *SpriteTexture ) ( struct model_s *pSpriteModel, int frame );
 	int			( *WorldToScreen ) ( float *world, float *screen );  // Returns 1 if it's z clipped
-
-	//modif de Julien
-	//effet de brouillard
-	void		( *Fog ) ( float flFogColor[3], float flStart, float flEnd, int bOn ); //Works just like GL_FOG, flFogColor is r/g/b.
-	//importé du SDK 2.2
-	//fin de la modif
+	void		( *Fog ) ( float flFogColor[3], float flStart, float flEnd, int bOn ); // Works just like GL_FOG, flFogColor is r/g/b.
+	void		( *ScreenToWorld ) ( float *screen, float *world  ); 
+	void		( *GetMatrix ) ( const int pname, float *matrix );
+	int			( *BoxInPVS ) ( float *mins, float *maxs );
+	void		( *LightAtPoint ) ( float *pos, float *value );
+	void		( *Color4fRendermode ) ( float r, float g, float b, float a, int rendermode );
+	void		( *FogParams ) ( float flDensity, int iFogSkybox ); // Used with Fog()...sets fog density and whether the fog should be applied to the skybox
 
 } triangleapi_t;
 

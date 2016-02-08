@@ -129,14 +129,14 @@ void CHandler_Soin :: mousePressed(MouseCode code,Panel* panel)
 	{
 		p->m_iDigit [m_iBodyPart] = 1;
 
-		p->m_pDigit [m_iBodyPart]->m_pTGA = LoadTGA("bout1");
+		p->m_pDigit [m_iBodyPart]->m_pTGA = LoadTGAForRes("bout1");
 		p->m_pDigit [m_iBodyPart]->setImage( p->m_pDigit [m_iBodyPart]->m_pTGA );
 	}
 	else
 	{
 		p->m_iDigit [m_iBodyPart] = 0;
 
-		p->m_pDigit [m_iBodyPart]->m_pTGA = LoadTGA("bout0");
+		p->m_pDigit [m_iBodyPart]->m_pTGA = LoadTGAForRes("bout0");
 		p->m_pDigit [m_iBodyPart]->setImage( p->m_pDigit [m_iBodyPart]->m_pTGA );
 	}
 
@@ -198,7 +198,7 @@ void CSoin::Initialize( void )
 
 /*	for ( int i=0; i<7; i++ )
 	{			
-		m_pDigit [i]->m_pTGA = LoadTGA("bout0");
+		m_pDigit [i]->m_pTGA = LoadTGAForRes("bout0");
 		m_pDigit [i]->setImage( m_pDigit [i]->m_pTGA );
 	}
 

@@ -1,4 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//=========== (C) Copyright 1996-2002 Valve, L.L.C. All rights reserved. ===========
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -102,6 +102,7 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, int iRemoveMe, int x,int y,int wide
 	m_pScrollPanel->validate();
 
 	// Create the Class buttons
+#ifdef _TFC
 	for (int i = 0; i <= PC_RANDOM; i++)
 	{
 		char sz[256]; 
@@ -153,7 +154,7 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, int iRemoveMe, int x,int y,int wide
 		pNameLabel->setBgColor( r, g, b, a );
 		pNameLabel->setContentAlignment( vgui::Label::a_west );
 		//pNameLabel->setBorder(new LineBorder());
-		pNameLabel->setText(localName);
+		pNameLabel->setText( "%s", localName);
 
 		// Create the Class Image
 		if ( bShowClassGraphic )
@@ -198,9 +199,11 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, int iRemoveMe, int x,int y,int wide
 		// Open up the Class Briefing File
 		sprintf(sz, "classes/short_%s.txt", sTFClassSelection[i]);
 		char *cText = "Class Description not available.";
-		char *pfile = (char*)gEngfuncs.COM_LoadFile( sz, 5, NULL );
+		char *pfile = (char *)gEngfuncs.COM_LoadFile( sz, 5, NULL );
 		if (pfile)
+		{
 			cText = pfile;
+		}
 		
 		// Create the Text info window
 		TextPanel *pTextWindow = new TextPanel(cText, textOffs, CLASSMENU_WINDOW_TEXT_Y, (CLASSMENU_WINDOW_SIZE_X - textOffs)-5, CLASSMENU_WINDOW_SIZE_Y - CLASSMENU_WINDOW_TEXT_Y);
@@ -215,7 +218,7 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, int iRemoveMe, int x,int y,int wide
 		int wide,tall;
 		pTextWindow->getTextImage()->getTextSizeWrapped( wide,tall);
 		pTextWindow->setSize(wide,tall);
-		//pTextWindow->setBorder(new LineBorder());
+
 		int xx,yy;
 		pTextWindow->getPos(xx,yy);
 		int maxX=xx+wide;
@@ -233,10 +236,11 @@ CClassMenuPanel::CClassMenuPanel(int iTrans, int iRemoveMe, int x,int y,int wide
 		}
 
 		m_pClassInfoPanel[i]->setSize( maxX , maxY );
+		if (pfile) gEngfuncs.COM_FreeFile( pfile );
 		//m_pClassInfoPanel[i]->setBorder(new LineBorder());
 
 	}
-
+#endif
 	// Create the Cancel button
 	m_pCancelButton = new CommandButton( gHUD.m_TextMessage.BufferedLocaliseTextString( "#Menu_Cancel" ), CLASSMENU_TOPLEFT_BUTTON_X, 0, CLASSMENU_BUTTON_SIZE_X, CLASSMENU_BUTTON_SIZE_Y);
 	m_pCancelButton->setParent( this );
@@ -257,6 +261,7 @@ void CClassMenuPanel::Update()
 	int	 iYPos = CLASSMENU_TOPLEFT_BUTTON_Y;
 
 	// Cycle through the rest of the buttons
+#ifdef _TFC
 	for (int i = 0; i <= PC_RANDOM; i++)
 	{
 		bool bCivilian = (gViewPort->GetValidClasses(g_iTeamNumber) == -1);
@@ -315,10 +320,13 @@ void CClassMenuPanel::Update()
 
 		char sz[256]; 
 		sprintf(sz, m_sPlayersOnTeamString, iTotal);
-		m_pPlayers[i]->setText( sz );
+		m_pPlayers[i]->setText( "%s", sz );
 
 		// Set the text color to the teamcolor
-		m_pPlayers[i]->setFgColor( iTeamColors[g_iTeamNumber][0], iTeamColors[g_iTeamNumber][1], iTeamColors[g_iTeamNumber][2], 0 );
+		m_pPlayers[i]->setFgColor(	iTeamColors[g_iTeamNumber % iNumberOfTeamColors][0],
+									iTeamColors[g_iTeamNumber % iNumberOfTeamColors][1],
+									iTeamColors[g_iTeamNumber % iNumberOfTeamColors][2],
+									0 );
 
 		// set the graphic to be the team pick
 		for ( int team = 0; team < MAX_TEAMS; team++ )
@@ -340,6 +348,7 @@ void CClassMenuPanel::Update()
 			}
 		}
 	}
+#endif
 
 	// If the player already has a class, make the cancel button visible
 	if ( g_iPlayerClass )
@@ -407,6 +416,7 @@ void CClassMenuPanel::Initialize( void )
 void CClassMenuPanel::SetActiveInfo( int iInput )
 {
 	// Remove all the Info panels and bring up the specified one
+#ifdef _TFC
 	for (int i = 0; i <= PC_RANDOM; i++)
 	{
 		m_pButtons[i]->setArmed( false );
@@ -414,6 +424,7 @@ void CClassMenuPanel::SetActiveInfo( int iInput )
 	}
 
 	if ( iInput > PC_RANDOM || iInput < 0 )
+#endif
 		iInput = 0;
 
 	m_pButtons[iInput]->setArmed( true );

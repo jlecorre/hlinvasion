@@ -152,7 +152,7 @@ public:
 #define IRGUN_MAX_CARRY			150
 #define FGRENADE_MAX_CARRY		10
 #define LFLAMMES_MAX_CARRY		200
-#define SUPERGUN_MAX_CARRY		100
+#define SUPERGUN_MAX_CARRY		300
 //fin modif.
 
 // the maximum amount of ammo each weapon's clip can hold
@@ -179,7 +179,7 @@ public:
 #define IRGUN_MAX_CLIP			10
 #define FGRENADE_MAX_CLIP		WEAPON_NOCLIP
 #define LFLAMMES_MAX_CLIP		WEAPON_NOCLIP
-#define SUPERGUN_MAX_CLIP		25
+#define SUPERGUN_MAX_CLIP		100
 //fin modif.
 
 // the default amount of ammo that comes with each gun when it spawns
@@ -224,7 +224,7 @@ public:
 #define AMMO_FSNIPERCLIP_GIVE	5
 #define AMMO_IRGUNCLIPGIVE		10
 #define AMMO_LFLAMMESCLIPGIVE	30
-#define AMMO_SUPERGUNCLIPGIVE	20
+#define AMMO_SUPERGUNCLIPGIVE	100
 //fin modif
 
 // bullet types

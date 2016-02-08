@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef VGUI_LINEBORDER_H
 #define VGUI_LINEBORDER_H
@@ -20,6 +26,8 @@ public:
 	LineBorder(int thickness);
 	LineBorder(Color color);
 	LineBorder(int thickness,Color color);
+
+	inline void setLineColor(int r, int g, int b, int a) {_color = Color(r,g,b,a);}
 private:
 	virtual void init(int thickness,Color color);
 protected:

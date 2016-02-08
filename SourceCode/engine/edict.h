@@ -1,9 +1,18 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 #if !defined EDICT_H
 #define EDICT_H
 #ifdef _WIN32
 #pragma once
 #endif
 #define	MAX_ENT_LEAFS	48
+
+#include "progdefs.h"
 
 struct edict_s
 {

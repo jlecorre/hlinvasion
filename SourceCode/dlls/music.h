@@ -21,9 +21,16 @@
 #ifndef MUSIC_H
 #define MUSIC_H
 
+#include "fmod.h"
 
-#include <fmod.h>
+#ifdef _WIN32
+#define FMOD_DLL_PATH			"invasion\\fmod.dll"
+#include "winsani_in.h"
 #include <windows.h>
+#include "winsani_out.h"
+#else
+#define FMOD_DLL_PATH			"invasion/libfmod-3.75.so"
+#endif
 
 //---------------------------------------------------------
 // defines
@@ -31,7 +38,7 @@
 #define	MUSIC_AUDIO_FILE		1
 #define MUSIC_LIST_FILE			0
 
-#define FMOD_DLL_PATH			"invasion\\fmod.dll"
+
 
 
 

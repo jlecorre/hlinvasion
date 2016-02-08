@@ -1,9 +1,16 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef VGUI_WIZARDPANEL_H
 #define VGUI_WIZARDPANEL_H
 
 #include<VGUI_Panel.h>
 #include<VGUI_Dar.h>
+#include<VGUI_Button.h>
 
 namespace vgui
 {

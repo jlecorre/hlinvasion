@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // Triangle rendering, if any
 
 #include "hud.h"
@@ -9,29 +16,20 @@
 #include "entity_state.h"
 #include "cl_entity.h"
 #include "triangleapi.h"
+#include "Exports.h"
+#include "tri.h"
 
-
-
-#define DLLEXPORT __declspec( dllexport )
-
-extern "C"
-{
-	void DLLEXPORT HUD_DrawNormalTriangles( void );
-	void DLLEXPORT HUD_DrawTransparentTriangles( void );
-};
-
-//#define TEST_IT
-#if defined( TEST_IT )
 
 /*
 =================
-Draw_Triangles
+HUD_DrawNormalTriangles
 
-Example routine.  Draws a sprite offset from the player origin.
+Non-transparent triangles-- add them here
 =================
 */
-void Draw_Triangles( void )
+void CL_DLLEXPORT HUD_DrawNormalTriangles( void )
 {
+/*
 	cl_entity_t *player;
 	vec3_t org;
 
@@ -82,9 +80,12 @@ void Draw_Triangles( void )
 
 	gEngfuncs.pTriAPI->End();
 	gEngfuncs.pTriAPI->RenderMode( kRenderNormal );
+	
+	gHUD.m_Fog.DrawFog ();
+	*/
 }
 
-#endif
+
 
 /*
 =================
@@ -92,18 +93,13 @@ HUD_DrawNormalTriangles
 
 Non-transparent triangles-- add them here
 =================
-*/
+
 void DLLEXPORT HUD_DrawNormalTriangles( void )
 {
 	// dessin du brouillard
 	gHUD.m_Fog.DrawFog ();
-
-
-#if defined( TEST_IT )
-//	Draw_Triangles();
-#endif
 }
-
+*/
 /*
 =================
 HUD_DrawTransparentTriangles
@@ -111,7 +107,7 @@ HUD_DrawTransparentTriangles
 Render any triangles with transparent rendermode needs here
 =================
 */
-void DLLEXPORT HUD_DrawTransparentTriangles( void )
+void CL_DLLEXPORT HUD_DrawTransparentTriangles( void )
 {
 	gHUD.m_Particules.DrawAll();	// affichage des particules et des decals
 	gHUD.m_LFlammes.DrawFlammes();	// lance flammes

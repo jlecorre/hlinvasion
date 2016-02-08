@@ -293,7 +293,7 @@ void CTankCam :: Spawn( void )
 	pev->takedamage		= DAMAGE_NO;
 
 
-	SetThink ( CamThink );
+	SetThink ( &CTankCam::CamThink );
 	pev->nextthink = gpGlobals->time + 1.5;
 
 }
@@ -406,8 +406,8 @@ void CTankBSP :: Spawn( void )
 	m_pTankModel->Spawn();
 
 
-	SetThink ( TankThink );
-	SetTouch ( TouchPlayer );
+	SetThink ( &CTankBSP::TankThink );
+	SetTouch ( &CTankBSP::TouchPlayer );
 	pev->nextthink = pev->ltime + 0xFF;
 
 }
@@ -565,7 +565,7 @@ void CTank :: Spawn( void )
 	bTankOn = bSetView = bTankDead =0;
 	m_flLastAttack1 = m_soundPlaying = 0;
 
-	SetThink( IdleThink );
+	SetThink( &CTank::IdleThink );
 	pev->nextthink = gpGlobals->time + 1;
 
 
@@ -652,7 +652,7 @@ void CTank :: UseTank ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 
 		m_pCam->SetPlayerTankView ( TRUE );
 
-		SetThink( DriveThink );
+		SetThink( &CTank::DriveThink );
 		pev->nextthink = gpGlobals->time + 2;
 	}
 }
@@ -716,7 +716,7 @@ void CTank :: DriveThink ( void )
 
 		UpdateSound ();
 
-		SetThink( StopThink );
+		SetThink( &CTank::StopThink );
 		pev->nextthink = gpGlobals->time + 2;
 		return;
 	}
@@ -1049,7 +1049,8 @@ void CTank :: DriveThink ( void )
 	if ( m_pPlayer->pev->button & IN_ATTACK2 )
 	{
 		Vector posGun, dirGun;
-		GetAttachment( 3, posGun, Vector ( 0, 0, 0 ) );
+		Vector vec_null = Vector {0,0,0};
+		GetAttachment( 3, posGun, vec_null);
 		UTIL_MakeVectorsPrivate( TourelleAngle(), dirGun, NULL, NULL );
 		FireBullets( 1, posGun, dirGun, VECTOR_CONE_5DEGREES, 8192, BULLET_MONSTER_12MM );
 
@@ -1086,7 +1087,7 @@ void CTank :: StopThink ( void )
 
 	m_pCam->SetPlayerTankView ( FALSE );
 
-	m_pCam->SetThink ( SUB_Remove );
+	m_pCam->SetThink ( &CTank::SUB_Remove );
 	m_pCam->pev->nextthink = gpGlobals->time + 0.1;
 
 	m_pCam = NULL;
@@ -1105,7 +1106,7 @@ void CTank :: StopThink ( void )
 	m_pPlayer = NULL;
 
 	pev->nextthink = gpGlobals->time + 0.1;
-	SetThink( IdleThink );
+	SetThink( &CTank :: IdleThink );
 
 }
 
@@ -1174,7 +1175,7 @@ void CTank :: TankDeath ( void )
 
 	UpdateSound ();
 
-	SetThink ( DeadThink );
+	SetThink ( &CTank::DeadThink );
 	pev->nextthink = gpGlobals->time + 29 / 21.0;
 
 	// maman, c'est quoi qu'a fait boum ?
@@ -1230,7 +1231,7 @@ void CTank :: TankDeath ( void )
 		pGib->pev->avelocity = Vector ( RANDOM_FLOAT(-1000,1000), RANDOM_FLOAT(-1000,1000), RANDOM_FLOAT(-1000,1000) );
 
 		pGib->pev->solid = SOLID_NOT;
-		pGib->SetThink(SUB_Remove);
+		pGib->SetThink(&CGib::SUB_Remove);
 		pGib->pev->nextthink = gpGlobals->time + 1;
 	}
 
@@ -1263,7 +1264,8 @@ int CTank :: ModifAngles ( int angle )
 void CTank :: UpdateCamAngle ( Vector vecNewPosition, float flTime )
 {
 	Vector vecNewAngle;
-	GetAttachment( 2, vecCamTarget, Vector ( 0, 0, 0 ) );
+	Vector vec_null = Vector(0,0,0);
+	GetAttachment( 2, vecCamTarget,vec_null);
 
 	vecNewAngle = UTIL_VecToAngles( vecCamTarget - vecNewPosition );
 	vecNewAngle.x = -vecNewAngle.x;
@@ -1302,7 +1304,8 @@ Vector CTank :: UpdateCam ( void )
 void CTank :: Fire ( int canon )
 {
 	Vector vecGun;
-	GetAttachment( canon, vecGun, Vector(0,0,0) );
+	Vector vec_null = Vector(0,0,0);
+	GetAttachment( canon, vecGun, vec_null );
 
 	if ( !FStrEq(STRING(gpGlobals->mapname), "l3m10") && !FStrEq(STRING(gpGlobals->mapname), "l3m12")  && !FStrEq(STRING(gpGlobals->mapname), "l3m14")  )
 	{			
@@ -1462,7 +1465,7 @@ int CTank::Restore( CRestore &restore )		// s execute lors du chargement rapide
 	m_pTankBSP = pModelFound->m_pTankBSP;					// changement de tankbsp
 	m_pTankBSP->m_pTankModel = this;
 
-	pModelFound->SetThink ( SUB_Remove );					// destruction du tankmodel inutile
+	pModelFound->SetThink ( &CTank::SUB_Remove );					// destruction du tankmodel inutile
 	pModelFound->pev->nextthink = gpGlobals->time + 0.1;
 	pModelFound->pev->rendermode = kRenderTransTexture;
 	pModelFound->pev->renderamt = 0;
@@ -1530,7 +1533,7 @@ void CMineAC :: Spawn( void )
 	pev->movetype = MOVETYPE_NOCLIP;
 	pev->solid = SOLID_NOT;
 
-	SetThink ( MineThink );
+	SetThink ( &CMineAC::MineThink );
 	pev->nextthink = gpGlobals->time + 0.1;
 
 }
@@ -1548,7 +1551,7 @@ void CMineAC :: MineThink ( void )
 	if ( (tr.pHit->v.flags & FL_MONSTER) || (tr.pHit->v.flags & FL_CLIENT) )
 	{
 		ExplosionCreate ( pev->origin + Vector ( 0,0,30 ), Vector(0,0,0), edict(), 200, TRUE );
-		SetThink ( SUB_Remove );
+		SetThink ( &CMineAC::SUB_Remove );
 	}
 }
 
@@ -1577,7 +1580,7 @@ void CTankCharger :: Spawn( void )
 
 	pev->effects |= EF_NODRAW;
 
-	SetThink ( ChargerThink );
+	SetThink ( &CTankCharger::ChargerThink );
 	pev->nextthink = gpGlobals->time + 0.1;
 
 }

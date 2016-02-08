@@ -1,14 +1,12 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
 *	All Rights Reserved.
 *
 ****/
-
-// map.c
 
 #include "csg.h"
 
@@ -18,7 +16,7 @@ brush_t		mapbrushes[MAX_MAP_BRUSHES];
 int			numbrushsides;
 side_t		brushsides[MAX_MAP_SIDES];
 
-//============================================================================
+int g_nMapFileVersion;
 
 
 /*
@@ -28,12 +26,12 @@ textureAxisFromPlane
 */
 vec3_t	baseaxis[18] =
 {
-{0,0,1}, {1,0,0}, {0,-1,0},			// floor
-{0,0,-1}, {1,0,0}, {0,-1,0},		// ceiling
-{1,0,0}, {0,1,0}, {0,0,-1},			// west wall
-{-1,0,0}, {0,1,0}, {0,0,-1},		// east wall
-{0,1,0}, {1,0,0}, {0,0,-1},			// south wall
-{0,-1,0}, {1,0,0}, {0,0,-1}			// north wall
+	{0,0,1}, {1,0,0}, {0,-1,0},			// floor
+	{0,0,-1}, {1,0,0}, {0,-1,0},		// ceiling
+	{1,0,0}, {0,1,0}, {0,0,-1},			// west wall
+	{-1,0,0}, {0,1,0}, {0,0,-1},		// east wall
+	{0,1,0}, {1,0,0}, {0,0,-1},			// south wall
+	{0,-1,0}, {1,0,0}, {0,0,-1}			// north wall
 };
 
 void TextureAxisFromPlane(plane_t *pln, vec3_t xv, vec3_t yv)
@@ -58,7 +56,6 @@ void TextureAxisFromPlane(plane_t *pln, vec3_t xv, vec3_t yv)
 	VectorCopy (baseaxis[bestaxis*3+1], xv);
 	VectorCopy (baseaxis[bestaxis*3+2], yv);
 }
-
 
 
 /*
@@ -103,7 +100,7 @@ void ParseBrush (entity_t *mapent)
 
 		b->numsides++;
 
-	// read the three point plane definition
+		// read the three point plane definition
 		for (i=0 ; i<3 ; i++)
 		{
 			if (i != 0)
@@ -123,16 +120,71 @@ void ParseBrush (entity_t *mapent)
 				
 		}
 
-	// read the texturedef
+		// read the texturedef
 		GetToken (false);
 		strcpy (side->td.name, token);
 
-		GetToken (false);
-		side->td.shift[0] = atoi(token);
-		GetToken (false);
-		side->td.shift[1] = atoi(token);
-		GetToken (false);
-		side->td.rotate = atoi(token);	
+		if (g_nMapFileVersion < 220)
+		{
+			GetToken (false);
+			side->td.shift[0] = atof(token);
+			GetToken (false);
+			side->td.shift[1] = atof(token);
+			GetToken (false);
+			side->td.rotate = atof(token);
+		}
+		else
+		{
+			// texture U axis
+			GetToken (false);
+			if (strcmp (token, "["))
+			{
+				Error("missing '[ in texturedef");
+			}
+
+			GetToken (false);
+			side->td.UAxis[0] = atof(token);
+			GetToken (false);
+			side->td.UAxis[1] = atof(token);
+			GetToken (false);
+			side->td.UAxis[2] = atof(token);
+			GetToken (false);
+			side->td.shift[0] = atof(token);
+
+			GetToken (false);
+			if (strcmp (token, "]"))
+			{
+				Error("missing ']' in texturedef");
+			}
+
+			// texture V axis
+			GetToken (false);
+			if (strcmp (token, "["))
+			{
+				Error("missing '[ in texturedef");
+			}
+
+			GetToken (false);
+			side->td.VAxis[0] = atof(token);
+			GetToken (false);
+			side->td.VAxis[1] = atof(token);
+			GetToken (false);
+			side->td.VAxis[2] = atof(token);
+			GetToken (false);
+			side->td.shift[1] = atof(token);
+
+			GetToken (false);
+			if (strcmp (token, "]"))
+			{
+				Error("missing ']' in texturedef");
+			}
+
+			// Texture rotation is implicit in U/V axes.
+			GetToken(false);
+			side->td.rotate = 0;
+		}
+
+		// texure scale
 		GetToken (false);
 		side->td.scale[0] = atof(token);
 		GetToken (false);
@@ -210,6 +262,12 @@ qboolean	ParseMapEntity (void)
 		else
 		{
 			e = ParseEpair ();
+
+			if (!strcmp(e->key, "mapversion"))
+			{
+				g_nMapFileVersion = atoi(e->value);
+			}
+
 			e->next = mapent->epairs;
 			mapent->epairs = e;
 		}

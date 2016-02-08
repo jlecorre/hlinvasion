@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -24,16 +24,19 @@
 #include <sys/stat.h>
 #include <math.h>
 
+#include "archtypes.h"
 #include "cmdlib.h"
 #include "lbmlib.h"
 #include "scriplib.h"
 #include "mathlib.h"
 #define EXTERN
-#include "..\..\engine\studio.h"
+#include "../../engine/studio.h"
 #include "studiomdl.h"
-#include "..\..\dlls\activity.h"
-#include "..\..\dlls\activitymap.h"
+#include "../../dlls/activity.h"
+#include "../../dlls/activitymap.h"
 
+
+static int force_powerof2_textures = 0;
 
 void Sys_Error (char *error, ...) {};
 
@@ -1464,6 +1467,52 @@ void Grab_BMP ( char *filename, s_texture_t *ptexture )
 
 }
 
+#define MIN_DIMENSION 8
+#define MAX_DIMENSION 512
+
+int GetBestPowerOf2( int value )
+{
+	int i;
+	int power = MIN_DIMENSION;
+
+	for(i=0;i<32;i++)
+	{
+		if ( (1<<i) < MIN_DIMENSION )
+			continue;
+
+		if ( (1<<i) > MAX_DIMENSION )
+			continue;
+
+		power=(1<<i);
+		if(power>=value)
+		{
+			break;
+		}
+	}
+
+	return power;
+}
+
+int GetSkinWidth( int rawsize )
+{
+	if ( !force_powerof2_textures )
+	{
+		return (int)( rawsize + 3) & ~3;
+	}
+
+	return GetBestPowerOf2( rawsize );	
+}
+
+int GetSkinHeight( int rawsize )
+{
+	if ( !force_powerof2_textures )
+	{
+		return ( rawsize );
+	}
+
+	return GetBestPowerOf2( rawsize );	
+}
+
 void ResizeTexture( s_texture_t *ptexture )
 {
 	int		i, j, s, t;
@@ -1475,8 +1524,9 @@ void ResizeTexture( s_texture_t *ptexture )
 
 	ptexture->skintop = ptexture->min_t;
 	ptexture->skinleft = ptexture->min_s;
-	ptexture->skinwidth = (int)((ptexture->max_s - ptexture->min_s) + 1 + 3) & ~3;
-	ptexture->skinheight = (int)(ptexture->max_t - ptexture->min_t) + 1;
+
+	ptexture->skinwidth = GetSkinWidth( ptexture->max_s - ptexture->min_s + 1);
+	ptexture->skinheight = GetSkinHeight(ptexture->max_t - ptexture->min_t + 1);
 
 	ptexture->size = ptexture->skinwidth * ptexture->skinheight + 256 * 3;
 
@@ -2592,7 +2642,7 @@ int lookupActivity( char *szActivity )
 int Cmd_Sequence( )
 {
 	int depth = 0;
-	char smdfilename[4][1024];
+	char smdfilename[MAXSTUDIOGROUPS][1024];
 	int i;
 	int numblends = 0;
 	int start = 0;
@@ -3072,6 +3122,61 @@ void Cmd_Renamebone( )
 	numrenamedbones++;
 }
 
+/*add transparent texture support to models
+===================
+Cmd_SetTextureRendermode
+
+//paramaters:
+  	 // "texturename" "rendermode" renderamt
+  	// acceptable strings for rendermode are:
+  	// "alpha"
+  	// "additive"
+  	// "masked"
+
+===================
+*/
+void Cmd_SetTextureRendermode( void )
+{
+	int iTextureIndex;
+
+	if(!TokenAvailable())
+	{
+  		printf("*********ERROR!!!*************");
+  		printf("\nmissing texturename after $texrendermode\n");
+  		exit(1);
+	}
+
+	GetToken(false);
+
+	iTextureIndex = lookup_texture(token);
+
+	if(!TokenAvailable())
+	{
+  		printf("\n*********ERROR!!!*************\n");
+  		printf("\nmissing rendermode at $texrendermode\n");
+  		exit(1);
+	}
+
+	GetToken(false);
+
+	if(!strcmp(token, "additive"))
+	{
+		texture[iTextureIndex].flags |= STUDIO_NF_ADDITIVE;
+		return;
+	}
+	else if(!strcmp(token, "masked"))
+	{
+  		texture[iTextureIndex].flags |= STUDIO_NF_MASKED;
+  		return;
+	}
+	else
+	{
+  		printf("\n*********ERROR!!!*************\n");
+  		printf("\ninvalid rendermode at $texrendermode, choices are :\nadditive\nmasked\n");
+  		exit(1);
+	}
+}
+
 
 /*
 ===============
@@ -3213,14 +3318,17 @@ void ParseScript (void)
 		}
 		else if (!strcmp (token, "$cliptotextures"))
 		{
-			clip_texcoords = 1;
+			clip_texcoords = 0;
 		}
 		else if (!strcmp (token, "$renamebone"))
 		{
 			Cmd_Renamebone ();
 		}
-	
-		else
+  		else if (!strcmp (token, "$texrendermode"))
+  		{
+			Cmd_SetTextureRendermode();
+  		}
+  		else
 		{
 			Error ("bad command %s\n", token);
 		}
@@ -3252,7 +3360,7 @@ int main (int argc, char **argv)
 	gamma = 1.8;
 
 	if (argc == 1)
-		Error ("usage: studiomdl [-t texture] -r(tag reversed) -n(tag bad normals) -f(flip all triangles) [-a normal_blend_angle] -h(dump hboxes) -i(ignore warnings) [-g max_sequencegroup_size(K)] file.qc");
+		Error ("usage: studiomdl [-t texture] -r(tag reversed) -n(tag bad normals) -f(flip all triangles) [-a normal_blend_angle] -h(dump hboxes) -i(ignore warnings) -p(force power of 2 textures) [-g max_sequencegroup_size(K)] file.qc");
 		
 	for (i = 1; i < argc - 1; i++) {
 		if (argv[i][0] == '-') {
@@ -3287,6 +3395,10 @@ int main (int argc, char **argv)
 			case 'g':
 				i++;
 				maxseqgroupsize = 1024 * atoi( argv[i] );
+				break;
+			case 'p':
+			case '2':
+				force_powerof2_textures = 1;
 				break;
 			case 'i':
 				ignore_warnings = 1;

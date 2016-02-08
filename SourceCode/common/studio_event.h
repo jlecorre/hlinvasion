@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -14,7 +14,9 @@
 ****/
 #if !defined( STUDIO_EVENTH )
 #define STUDIO_EVENTH
+#ifdef _WIN32
 #pragma once
+#endif
 
 typedef struct mstudioevent_s
 {

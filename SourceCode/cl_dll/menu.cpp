@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -117,7 +117,7 @@ void CHudMenu :: SelectMenuItem( int menu_item )
 	{
 		char szbuf[32];
 		sprintf( szbuf, "menuselect %d\n", menu_item );
-		ClientCmd( szbuf );
+		EngineClientCmd( szbuf );
 
 		// remove the menu
 		m_fMenuDisplayed = 0;

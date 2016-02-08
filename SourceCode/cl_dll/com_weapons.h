@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 // com_weapons.h
 // Shared weapons common function prototypes
 #if !defined( COM_WEAPONSH )
@@ -7,11 +14,7 @@
 #endif
 
 #include "hud_iface.h"
-
-extern "C"
-{
-	void _DLLEXPORT HUD_PostRunCmd( struct local_state_s *from, struct local_state_s *to, struct usercmd_s *cmd, int runfuncs, double time, unsigned int random_seed );
-}
+#include "Exports.h"
 
 void			COM_Log( char *pszFile, char *fmt, ...);
 int				CL_IsDead( void );
@@ -27,7 +30,7 @@ void			HUD_SetMaxSpeed( const struct edict_s *ed, float speed );
 int				stub_PrecacheModel( char* s );
 int				stub_PrecacheSound( char* s );
 unsigned short	stub_PrecacheEvent( int type, const char *s );
-const char		*stub_NameForFunction	( unsigned long function );
+const char		*stub_NameForFunction	( uint32 function );
 void			stub_SetModel			( struct edict_s *e, const char *m );
 
 

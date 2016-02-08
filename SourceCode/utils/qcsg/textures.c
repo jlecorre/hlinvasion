@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -418,55 +418,70 @@ int TexinfoForBrushTexture (plane_t *plane, brush_texture_t *bt, vec3_t origin)
 	|| !Q_strncasecmp (bt->name, "aaatrigger",10))
 		tx.flags |= TEX_SPECIAL;
 
-	TextureAxisFromPlane(plane, vecs[0], vecs[1]);
+	if (g_nMapFileVersion < 220)
+	{
+		TextureAxisFromPlane(plane, vecs[0], vecs[1]);
+	}
 
 	if (!bt->scale[0])
 		bt->scale[0] = 1;
 	if (!bt->scale[1])
 		bt->scale[1] = 1;
 
-
-// rotate axis
-	if (bt->rotate == 0)
-		{ sinv = 0 ; cosv = 1; }
-	else if (bt->rotate == 90)
-		{ sinv = 1 ; cosv = 0; }
-	else if (bt->rotate == 180)
-		{ sinv = 0 ; cosv = -1; }
-	else if (bt->rotate == 270)
-		{ sinv = -1 ; cosv = 0; }
-	else
-	{	
-		ang = bt->rotate / 180 * Q_PI;
-		sinv = sin(ang);
-		cosv = cos(ang);
-	}
-
-	if (vecs[0][0])
-		sv = 0;
-	else if (vecs[0][1])
-		sv = 1;
-	else
-		sv = 2;
-				
-	if (vecs[1][0])
-		tv = 0;
-	else if (vecs[1][1])
-		tv = 1;
-	else
-		tv = 2;
-					
-	for (i=0 ; i<2 ; i++)
+	if (g_nMapFileVersion < 220)
 	{
-		ns = cosv * vecs[i][sv] - sinv * vecs[i][tv];
-		nt = sinv * vecs[i][sv] +  cosv * vecs[i][tv];
-		vecs[i][sv] = ns;
-		vecs[i][tv] = nt;
-	}
+		// rotate axis
+		if (bt->rotate == 0)
+			{ sinv = 0 ; cosv = 1; }
+		else if (bt->rotate == 90)
+			{ sinv = 1 ; cosv = 0; }
+		else if (bt->rotate == 180)
+			{ sinv = 0 ; cosv = -1; }
+		else if (bt->rotate == 270)
+			{ sinv = -1 ; cosv = 0; }
+		else
+		{	
+			ang = bt->rotate / 180 * Q_PI;
+			sinv = sin(ang);
+			cosv = cos(ang);
+		}
 
-	for (i=0 ; i<2 ; i++)
-		for (j=0 ; j<3 ; j++)
-			tx.vecs[i][j] = vecs[i][j] / bt->scale[i];
+		if (vecs[0][0])
+			sv = 0;
+		else if (vecs[0][1])
+			sv = 1;
+		else
+			sv = 2;
+					
+		if (vecs[1][0])
+			tv = 0;
+		else if (vecs[1][1])
+			tv = 1;
+		else
+			tv = 2;
+						
+		for (i=0 ; i<2 ; i++)
+		{
+			ns = cosv * vecs[i][sv] - sinv * vecs[i][tv];
+			nt = sinv * vecs[i][sv] +  cosv * vecs[i][tv];
+			vecs[i][sv] = ns;
+			vecs[i][tv] = nt;
+		}
+
+		for (i=0 ; i<2 ; i++)
+			for (j=0 ; j<3 ; j++)
+				tx.vecs[i][j] = vecs[i][j] / bt->scale[i];
+	}
+	else
+	{
+		tx.vecs[0][0] = bt->UAxis[0] / bt->scale[0];
+		tx.vecs[0][1] = bt->UAxis[1] / bt->scale[0];
+		tx.vecs[0][2] = bt->UAxis[2] / bt->scale[0];
+
+		tx.vecs[1][0] = bt->VAxis[0] / bt->scale[1];
+		tx.vecs[1][1] = bt->VAxis[1] / bt->scale[1];
+		tx.vecs[1][2] = bt->VAxis[2] / bt->scale[1];
+	}
 
 	tx.vecs[0][3] = bt->shift[0] + DotProduct( origin, tx.vecs[0] );
 	tx.vecs[1][3] = bt->shift[1] + DotProduct( origin, tx.vecs[1] );

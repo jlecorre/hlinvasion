@@ -22,7 +22,7 @@
 #include "lflammes.h"
 #include "decals.h"
 
-extern gmsgLFlammes;
+extern int gmsgLFlammes;
 
 enum lflammes_e 
 {
@@ -457,8 +457,8 @@ void CFlamme :: Spawn( void )
 	m_flPlayerDmg	= 0;
 	m_bRestore		= FALSE;
 
-	SetThink ( FlameThink );
-	SetTouch ( FlameTouch );
+	SetThink ( &CFlamme::FlameThink );
+	SetTouch ( &CFlamme::FlameTouch );
 	pev->nextthink = m_flBirthTime + 0.1;
 
 
@@ -614,7 +614,7 @@ void EXPORT CFlamme :: FlameThink ( void )
 			MESSAGE_END();
 
 			pev->nextthink = gpGlobals->time + 0.1;
-			SetThink ( SUB_Remove );
+			SetThink ( &CFlamme::SUB_Remove );
 
 			// son
 			STOP_SOUND(ENT(pev), CHAN_STREAM, "ambience/burning1.wav" );
@@ -731,7 +731,7 @@ void EXPORT CFlamme :: FlameThink ( void )
 		MESSAGE_END();
 
 		pev->nextthink = gpGlobals->time + 0.1;
-		SetThink ( SUB_Remove );
+		SetThink ( &CFlamme::SUB_Remove );
 	}
 
 	// dommages
@@ -759,7 +759,7 @@ void EXPORT CFlamme :: FlameThink ( void )
 			MESSAGE_END();
 
 			pev->nextthink = gpGlobals->time + 0.1;
-			SetThink ( SUB_Remove );
+			SetThink ( &CFlamme::SUB_Remove );
 			return;
 		}
 
@@ -790,7 +790,7 @@ void EXPORT CFlamme :: FlameThink ( void )
 
 		
 		pev->nextthink = gpGlobals->time + 0.1;
-		SetThink ( SUB_Remove );
+		SetThink ( &CFlamme::SUB_Remove );
 	}
 
 

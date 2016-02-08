@@ -12,9 +12,14 @@
 #include "in_defs.h" // PITCH YAW ROLL
 #include "pm_movevars.h"
 #include "pm_shared.h"
+#include "pm_defs.h"
+#include "event_api.h"
 #include "pmtrace.h"
+
 #include "screenfade.h"
 #include "shake.h"
+
+#include "Exports.h"
 
 // modif de Julien
 #include "vgui_TeamFortressViewport.h"
@@ -37,22 +42,33 @@ extern "C"
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
 
-extern "C" 
-{
 	int CL_IsThirdPerson( void );
 	void CL_CameraOffset( float *ofs );
 
-	void DLLEXPORT V_CalcRefdef( struct ref_params_s *pparams );
+	void CL_DLLEXPORT V_CalcRefdef( struct ref_params_s *pparams );
 
 	void PM_ParticleLine( float *start, float *end, int pcolor, float life, float vert);
-	int PM_GetInfo( int ent );
-	void InterpolateAngles( float *start, float *end, float *output, float frac );
-	float AngleBetweenVectors( float * v1, float * v2 );
+	int		PM_GetVisEntInfo( int ent );
+	extern "C" int		PM_GetPhysEntInfo( int ent );
+	extern "C" void	InterpolateAngles(  float * start, float * end, float * output, float frac );
+	void	NormalizeAngles( float * angles );
+	extern "C" float	Distance(const float * v1, const float * v2);
+	extern "C" float	AngleBetweenVectors(  const float * v1,  const float * v2 );
 
-}
+	float	vJumpOrigin[3];
+	float	vJumpAngles[3];
+
 
 void V_DropPunchAngle ( float frametime, float *ev_punchangle );
 void VectorAngles( const float *forward, float *angles );
+
+#include "r_studioint.h"
+#include "com_model.h"
+#include "kbutton.h"
+
+extern engine_studio_api_t IEngineStudio;
+
+extern kbutton_t	in_mlook;
 
 /*
 The view is allowed to move slightly from it's true position for bobbing,
@@ -66,7 +82,15 @@ extern cvar_t	*chase_active;
 extern cvar_t	*scr_ofsx, *scr_ofsy, *scr_ofsz;
 extern cvar_t	*cl_vsmoothing;
 
-vec3_t v_origin, v_angles;
+#define	CAM_MODE_RELAX		1
+#define CAM_MODE_FOCUS		2
+
+vec3_t		v_origin, v_angles, v_cl_angles, v_sim_org, v_lastAngles;
+float		v_frametime, v_lastDistance;	
+float		v_cameraRelaxAngle	= 5.0f;
+float		v_cameraFocusAngle	= 35.0f;
+int			v_cameraMode = CAM_MODE_FOCUS;
+qboolean	v_resetCamera = 1;
 
 vec3_t ev_punchangle;
 
@@ -81,6 +105,7 @@ cvar_t	*cl_bobcycle;
 cvar_t	*cl_bob;
 cvar_t	*cl_bobup;
 cvar_t	*cl_waterdist;
+cvar_t	*cl_chasedist;
 
 // These cvars are not registered (so users can't cheat), so set the ->value field directly
 // Register these cvars in V_Init() if needed for easy tweaking
@@ -93,8 +118,8 @@ cvar_t	v_ipitch_level		= {"v_ipitch_level", "0.3", 0, 0.3};
 
 float	v_idlescale;  // used by TFC for concussion grenade effect
 
-/*
 //=============================================================================
+/*
 void V_NormalizeAngles( float *angles )
 {
 	int i;
@@ -283,18 +308,30 @@ void V_DriftPitch ( struct ref_params_s *pparams )
 	}
 
 	// don't count small mouse motion
-	if (pd.nodrift)
+	if ( pd.nodrift)
 	{
-		if ( fabs( pparams->cmd->forwardmove ) < cl_forwardspeed->value )
-			pd.driftmove = 0;
-		else
-			pd.driftmove += pparams->frametime;
-	
-		if ( pd.driftmove > v_centermove->value)
-		{
-			V_StartPitchDrift ();
+		if ( v_centermove->value > 0 && !(in_mlook.state & 1) )
+		{		
+			// this is for lazy players. if they stopped, looked around and then continued
+			// to move the view will be centered automatically if they move more than
+			// v_centermove units. 
+
+			if ( fabs( pparams->cmd->forwardmove ) < cl_forwardspeed->value )
+				pd.driftmove = 0;
+			else
+				pd.driftmove += pparams->frametime;
+		
+			if ( pd.driftmove > v_centermove->value)
+			{
+				V_StartPitchDrift ();
+			}
+			else
+			{
+				return;	// player didn't move enough
+			}
 		}
-		return;
+
+		return;	// don't drift view
 	}
 	
 	delta = pparams->idealpitch - pparams->cl_viewangles[PITCH];
@@ -375,7 +412,7 @@ void V_AddIdle ( struct ref_params_s *pparams )
 	pparams->viewangles[YAW] += v_idlescale * sin(pparams->time*v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
-
+ 
 /*
 ==============
 V_CalcViewRoll
@@ -446,6 +483,7 @@ void V_CalcIntermissionRefdef ( struct ref_params_s *pparams )
 
 	v_idlescale = old;
 
+	v_cl_angles = pparams->cl_viewangles;
 	v_origin = pparams->vieworg;
 	v_angles = pparams->viewangles;
 }
@@ -664,9 +702,13 @@ void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 
 	AngleVectors ( angles, pparams->forward, pparams->right, pparams->up );
 
-	for ( i=0 ; i<3 ; i++ )
+	// don't allow cheats in multiplayer
+	if ( pparams->maxclients <= 1 )
 	{
-		pparams->vieworg[i] += scr_ofsx->value*pparams->forward[i] + scr_ofsy->value*pparams->right[i] + scr_ofsz->value*pparams->up[i];
+		for ( i=0 ; i<3 ; i++ )
+		{
+			pparams->vieworg[i] += scr_ofsx->value*pparams->forward[i] + scr_ofsy->value*pparams->right[i] + scr_ofsz->value*pparams->up[i];
+		}
 	}
 	
 	// Treating cam_ofs[2] as the distance
@@ -854,7 +896,8 @@ void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 
 	// Store off v_angles before munging for third person
 	v_angles = pparams->viewangles;
-
+	v_lastAngles = pparams->viewangles;
+//	v_cl_angles = pparams->cl_viewangles;	// keep old user mouse angles !
 	if ( CL_IsThirdPerson() )
 	{
 		VectorCopy( camAngles, pparams->viewangles);
@@ -1188,14 +1231,18 @@ void V_CalcSpectatorRefdef ( struct ref_params_s *pparams )
 	v_origin = pparams->vieworg;
 }
 
-void DLLEXPORT V_CalcRefdef( struct ref_params_s *pparams )
+
+
+void CL_DLLEXPORT V_CalcRefdef( struct ref_params_s *pparams )
 {
+//	RecClCalcRefdef(pparams);
+
 	// intermission / finale rendering
 	if ( pparams->intermission )
 	{	
 		V_CalcIntermissionRefdef ( pparams );	
 	}
-	else if ( pparams->spectator )
+	else if ( pparams->spectator || g_iUser1 )	// g_iUser true if in spectator mode
 	{
 		V_CalcSpectatorRefdef ( pparams );	
 	}

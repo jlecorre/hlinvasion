@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -12,8 +12,8 @@
 #endif
 
 
-#include "vgui_label.h"
-#include "vgui_imagepanel.h"
+#include "VGUI_Label.h"
+#include "VGUI_ImagePanel.h"
 #include "vgui_defaultinputsignal.h"
 
 

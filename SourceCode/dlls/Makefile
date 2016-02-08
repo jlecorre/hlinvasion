@@ -22,7 +22,7 @@ PM_SHARED_OBJDIR=$(PM_SHARED_SRCDIR)/obj
 BASE_CFLAGS=-Dstricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp
 
 #safe optimization
-CFLAGS=$(BASE_CFLAGS) -w -m486 -O1
+CFLAGS=$(BASE_CFLAGS) -w -m32 -O1
 
 #full optimization
 #CFLAGS=$(BASE_CFLAGS) -w -m486 -O2 -ffast-math -funroll-loops \

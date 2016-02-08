@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -17,6 +17,7 @@
 #define PM_DEFSH
 #pragma once
 
+#include "archtypes.h"     // DAL
 #define	MAX_PHYSENTS 600 		  // Must have room for all entities in the world.
 #define MAX_MOVEENTS 64
 #define	MAX_CLIP_PLANES	5
@@ -28,8 +29,9 @@
 #define PM_WORLD_ONLY		0x00000008		// Only trace against the world
 
 // Values for flags parameter of PM_TraceLine
-#define PM_TRACELINE_ANYVISIBLE		0
-#define PM_TRACELINE_PHYSENTSONLY	1
+#define PM_TRACELINE_PHYSENTSONLY	0
+#define PM_TRACELINE_ANYVISIBLE		1
+
 
 #include "pm_info.h"
 
@@ -83,9 +85,8 @@ typedef struct physent_s
 	vec3_t			vuser4;
 } physent_t;
 
-typedef struct playermove_s playermove_t;
 
-struct playermove_s
+typedef struct playermove_s
 {
 	int				player_index;  // So we don't try to run the PM_CheckStuck nudging too quickly.
 	qboolean		server;        // For debugging, are we running physics code on server side?
@@ -184,24 +185,24 @@ struct playermove_s
 	
 	// Common functions
 	const char		*(*PM_Info_ValueForKey) ( const char *s, const char *key );
-	void			(*PM_Particle)( vec3_t origin, int color, float life, int zpos, int zvel);
-	int				(*PM_TestPlayerPosition) (vec3_t pos, pmtrace_t *ptrace );
+	void			(*PM_Particle)( float *origin, int color, float life, int zpos, int zvel);
+	int				(*PM_TestPlayerPosition) (float *pos, pmtrace_t *ptrace );
 	void			(*Con_NPrintf)( int idx, char *fmt, ... );
 	void			(*Con_DPrintf)( char *fmt, ... );
 	void			(*Con_Printf)( char *fmt, ... );
 	double			(*Sys_FloatTime)( void );
 	void			(*PM_StuckTouch)( int hitent, pmtrace_t *ptraceresult );
-	int				(*PM_PointContents) (vec3_t p, int *truecontents /*filled in if this is non-null*/ );
-	int				(*PM_TruePointContents) (vec3_t p);
-	int				(*PM_HullPointContents) ( struct hull_s *hull, int num, vec3_t p);   
-	pmtrace_t		(*PM_PlayerTrace) (vec3_t start, vec3_t end, int traceFlags, int ignore_pe );
-	struct pmtrace_s *(*PM_TraceLine)( float *start, float *end, int flags, int usehull, int ignore_pe );
-	long			(*RandomLong)( long lLow, long lHigh );
+	int				(*PM_PointContents) (float *p, int *truecontents /*filled in if this is non-null*/ );
+	int				(*PM_TruePointContents) (float *p);
+	int				(*PM_HullPointContents) ( struct hull_s *hull, int num, float *p);   
+	pmtrace_t		(*PM_PlayerTrace) (float *start, float *end, int traceFlags, int ignore_pe );
+	struct pmtrace_s *(*PM_TraceLine)( float *start, float *end, int flags, int usehulll, int ignore_pe );
+	int32			(*RandomLong)( int32 lLow, int32 lHigh );
 	float			(*RandomFloat)( float flLow, float flHigh );
 	int				(*PM_GetModelType)( struct model_s *mod );
-	void			(*PM_GetModelBounds)( struct model_s *mod, vec3_t mins, vec3_t maxs );
-	void			*(*PM_HullForBsp)( physent_t *pe, vec3_t offset );
-	float			(*PM_TraceModel)( physent_t *pEnt, vec3_t start, vec3_t end, trace_t *trace );
+	void			(*PM_GetModelBounds)( struct model_s *mod, float *mins, float *maxs );
+	void			*(*PM_HullForBsp)( physent_t *pe, float *offset );
+	float			(*PM_TraceModel)( physent_t *pEnt, float *start, float *end, trace_t *trace );
 	int				(*COM_FileSize)(char *filename);
 	byte			*(*COM_LoadFile) (char *path, int usehunk, int *pLength);
 	void			(*COM_FreeFile) ( void *buffer );
@@ -211,8 +212,12 @@ struct playermove_s
 	// Run functions for this frame?
 	qboolean		runfuncs;      
 	void			(*PM_PlaySound) ( int channel, const char *sample, float volume, float attenuation, int fFlags, int pitch );
-	const char		*(*PM_TraceTexture) ( int ground, vec3_t vstart, vec3_t vend );
+	const char		*(*PM_TraceTexture) ( int ground, float *vstart, float *vend );
 	void			(*PM_PlaybackEventFull) ( int flags, int clientindex, unsigned short eventindex, float delay, float *origin, float *angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2 );
-};
+	
+	pmtrace_t		(*PM_PlayerTraceEx) (float *start, float *end, int traceFlags, int (*pfnIgnore)( physent_t *pe ) );
+	int				(*PM_TestPlayerPositionEx) (float *pos, pmtrace_t *ptrace, int (*pfnIgnore)( physent_t *pe ) );
+	struct pmtrace_s *(*PM_TraceLineEx)( float *start, float *end, int flags, int usehulll, int (*pfnIgnore)( physent_t *pe ) );
+} playermove_t;
 
 #endif

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -26,7 +26,7 @@ typedef enum
 	NA_BROADCAST,
 	NA_IP,
 	NA_IPX,
-	NA_BROADCAST_IPX
+	NA_BROADCAST_IPX,
 } netadrtype_t;
 
 typedef struct netadr_s

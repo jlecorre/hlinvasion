@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include "archtypes.h"     // DAL
 #include "voice_gamemgr.h"
 #include <string.h>
 #include <assert.h>
@@ -33,7 +34,9 @@ CPlayerBitVec	g_bWantModEnable;
 
 cvar_t voice_serverdebug = {"voice_serverdebug", "0"};
 
-
+// Set game rules to allow all clients to talk to each other.
+// Muted players still can't talk to each other.
+cvar_t sv_alltalk = {"sv_alltalk", "0", FCVAR_SERVER};
 
 // ------------------------------------------------------------------------ //
 // Static helpers.
@@ -105,8 +108,14 @@ bool CVoiceGameMgr::Init(
 
 	m_msgPlayerVoiceMask = REG_USER_MSG( "VoiceMask", VOICE_MAX_PLAYERS_DW*4 * 2 );
 	m_msgRequestState = REG_USER_MSG( "ReqState", 0 );
+	
+	// register voice_serverdebug if it hasn't been registered already
+	if ( !CVAR_GET_POINTER( "voice_serverdebug" ) )
+		CVAR_REGISTER( &voice_serverdebug );
 
-	CVAR_REGISTER( &voice_serverdebug );
+	if( !CVAR_GET_POINTER( "sv_alltalk" ) )
+		CVAR_REGISTER( &sv_alltalk );
+
 	return true;
 }
 
@@ -138,6 +147,23 @@ void CVoiceGameMgr::ClientConnected(edict_t *pEdict)
 	g_SentBanMasks[index].Init(0);
 }
 
+// Called to determine if the Receiver has muted (blocked) the Sender
+// Returns true if the receiver has blocked the sender
+bool CVoiceGameMgr::PlayerHasBlockedPlayer(CBasePlayer *pReceiver, CBasePlayer *pSender)
+{
+	int iReceiverIndex, iSenderIndex;
+
+	if ( !pReceiver || !pSender )
+		return false;
+
+	iReceiverIndex = pReceiver->entindex() - 1;
+	iSenderIndex   = pSender->entindex() - 1;
+
+	if ( iReceiverIndex < 0 || iReceiverIndex >= m_nMaxPlayers || iSenderIndex < 0 || iSenderIndex >= m_nMaxPlayers )
+		return false;
+
+	return ( g_BanMasks[iReceiverIndex][iSenderIndex] ? true : false );
+}
 
 bool CVoiceGameMgr::ClientCommand(CBasePlayer *pPlayer, const char *cmd)
 {
@@ -153,7 +179,7 @@ bool CVoiceGameMgr::ClientCommand(CBasePlayer *pPlayer, const char *cmd)
 	{
 		for(int i=1; i < CMD_ARGC(); i++)
 		{
-			unsigned long mask = 0;
+			uint32 mask = 0;
 			sscanf(CMD_ARGV(i), "%x", &mask);
 
 			if(i <= VOICE_MAX_PLAYERS_DW)
@@ -168,7 +194,7 @@ bool CVoiceGameMgr::ClientCommand(CBasePlayer *pPlayer, const char *cmd)
 		}
 
 		// Force it to update the masks now.
-		UpdateMasks();		
+		//UpdateMasks();		
 		return true;
 	}
 	else if(stricmp(cmd, "VModEnable") == 0 && CMD_ARGC() >= 2)
@@ -176,7 +202,7 @@ bool CVoiceGameMgr::ClientCommand(CBasePlayer *pPlayer, const char *cmd)
 		VoiceServerDebug( "CVoiceGameMgr::ClientCommand: VModEnable (%d)\n", !!atoi(CMD_ARGV(1)) );
 		g_PlayerModEnable[playerClientIndex] = !!atoi(CMD_ARGV(1));
 		g_bWantModEnable[playerClientIndex] = false;
-		UpdateMasks();		
+		//UpdateMasks();		
 		return true;
 	}
 	else
@@ -189,6 +215,8 @@ bool CVoiceGameMgr::ClientCommand(CBasePlayer *pPlayer, const char *cmd)
 void CVoiceGameMgr::UpdateMasks()
 {
 	m_UpdateInterval = 0;
+
+	bool bAllTalk = !!(sv_alltalk.value);
 
 	for(int iClient=0; iClient < m_nMaxPlayers; iClient++)
 	{
@@ -206,13 +234,13 @@ void CVoiceGameMgr::UpdateMasks()
 		CBasePlayer *pPlayer = (CBasePlayer*)pEnt;
 
 		CPlayerBitVec gameRulesMask;
-		if(g_PlayerModEnable[iClient])
+		if( g_PlayerModEnable[iClient] )
 		{
 			// Build a mask of who they can hear based on the game rules.
 			for(int iOtherClient=0; iOtherClient < m_nMaxPlayers; iOtherClient++)
 			{
 				CBaseEntity *pEnt = UTIL_PlayerByIndex(iOtherClient+1);
-				if(pEnt && pEnt->IsPlayer() && m_pHelper->CanPlayerHearPlayer(pPlayer, (CBasePlayer*)pEnt))
+				if(pEnt && (bAllTalk || m_pHelper->CanPlayerHearPlayer(pPlayer, (CBasePlayer*)pEnt)) )
 				{
 					gameRulesMask[iOtherClient] = true;
 				}

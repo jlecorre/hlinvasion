@@ -23,19 +23,23 @@
 #define FALSE 0
 #endif
 
+#include <stdio.h> // for safe_sprintf()
+#include <stdarg.h>  // "
+#include <string.h> // for strncpy()
+
 // Macros to hook function calls into the HUD object
 #define HOOK_MESSAGE(x) gEngfuncs.pfnHookUserMsg(#x, __MsgFunc_##x );
 
 #define DECLARE_MESSAGE(y, x) int __MsgFunc_##x(const char *pszName, int iSize, void *pbuf) \
 							{ \
-							return gHUD.##y.MsgFunc_##x(pszName, iSize, pbuf ); \
+							return gHUD.y.MsgFunc_##x(pszName, iSize, pbuf ); \
 							}
 
 
 #define HOOK_COMMAND(x, y) gEngfuncs.pfnAddCommand( x, __CmdFunc_##y );
 #define DECLARE_COMMAND(y, x) void __CmdFunc_##x( void ) \
 							{ \
-								gHUD.##y.UserCmd_##x( ); \
+								gHUD.y.UserCmd_##x( ); \
 							}
 
 inline float CVAR_GET_FLOAT( const char *x ) {	return gEngfuncs.pfnGetCvarFloat( (char*)x ); }
@@ -66,18 +70,19 @@ inline struct cvar_s *CVAR_CREATE( const char *cv, const char *val, const int fl
 #define ScreenHeight (gHUD.m_scrinfo.iHeight)
 // ScreenWidth returns the width of the screen, in pixels
 #define ScreenWidth (gHUD.m_scrinfo.iWidth)
-/*
-// Use this to set any co-ords in 640x480 space
-#define XRES(x)		((x)  * ((float)ScreenWidth / 640))
-#define YRES(y)		((y)  * ((float)ScreenHeight / 480))
-*/
+
+#define BASE_XRES 640.f
+
 // use this to project world coordinates to screen coordinates
 #define XPROJECT(x)	( (1.0f+(x))*ScreenWidth*0.5f )
 #define YPROJECT(y) ( (1.0f-(y))*ScreenHeight*0.5f )
 
+#define XRES(x)					(x  * ((float)ScreenWidth / 640))
+#define YRES(y)					(y  * ((float)ScreenHeight / 480))
+
 #define GetScreenInfo (*gEngfuncs.pfnGetScreenInfo)
 #define ServerCmd (*gEngfuncs.pfnServerCmd)
-#define ClientCmd (*gEngfuncs.pfnClientCmd)
+#define EngineClientCmd (*gEngfuncs.pfnClientCmd)
 #define SetCrosshair (*gEngfuncs.pfnSetCrosshair)
 #define AngleVectors (*gEngfuncs.pfnAngleVectors)
 
@@ -121,6 +126,39 @@ inline void CenterPrint( const char *string )
 
 // returns the players name of entity no.
 #define GetPlayerInfo (*gEngfuncs.pfnGetPlayerInfo)
+
+inline char *safe_strcpy( char *dst, const char *src, int len_dst)
+{
+	if( len_dst <= 0 )
+	{
+		return NULL; // this is bad
+	}
+
+	strncpy(dst,src,len_dst);
+	dst[ len_dst - 1 ] = '\0';
+
+	return dst;
+}
+
+inline int safe_sprintf( char *dst, int len_dst, const char *format, ...)
+{
+	if( len_dst <= 0 )
+	{
+		return -1; // this is bad
+	}
+
+	va_list v;
+
+    va_start(v, format);
+
+	_vsnprintf(dst,len_dst,format,v);
+
+	va_end(v);
+
+	dst[ len_dst - 1 ] = '\0';
+
+	return 0;
+}
 
 // sound functions
 inline void PlaySound( char *szSound, float vol ) { gEngfuncs.pfnPlaySoundByName( szSound, vol ); }

@@ -142,7 +142,7 @@ void CFGrenade::Holster( int skiplocal  )
 	{
 		// no more grenades!
 		m_pPlayer->pev->weapons &= ~(1<<WEAPON_HANDGRENADE);
-		SetThink( DestroyItem );
+		SetThink( &CFGrenade::DestroyItem );
 		pev->nextthink = gpGlobals->time + 0.1;
 	}
 

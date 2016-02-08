@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 #if !defined( STUDIO_UTIL_H )
 #define STUDIO_UTIL_H
 #if defined( WIN32 )

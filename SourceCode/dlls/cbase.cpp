@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -21,11 +21,11 @@
 #include	"gamerules.h"
 #include	"game.h"
 
+void EntvarsKeyvalue( entvars_t *pev, KeyValueData *pkvd );
+
 extern "C" void PM_Move ( struct playermove_s *ppmove, int server );
 extern "C" void PM_Init ( struct playermove_s *ppmove  );
 extern "C" char PM_FindTextureType( char *name );
-
-void EntvarsKeyvalue( entvars_t *pev, KeyValueData *pkvd );
 
 extern Vector VecBModelOrigin( entvars_t* pevBModel );
 extern DLL_GLOBAL Vector		g_vecAttackDir;
@@ -73,7 +73,7 @@ static DLL_FUNCTIONS gFunctionTable =
 	SpectatorConnect,			//pfnSpectatorConnect      Called when spectator joins server
 	SpectatorDisconnect,        //pfnSpectatorDisconnect   Called when spectator leaves the server
 	SpectatorThink,				//pfnSpectatorThink        Called when spectator sends a command packet (usercmd_t)
-	
+
 	Sys_Error,					//pfnSys_Error				Called when engine has encountered an error
 
 	PM_Move,					//pfnPM_Move
@@ -97,7 +97,9 @@ static DLL_FUNCTIONS gFunctionTable =
 
 static void SetObjectCollisionBox( entvars_t *pev );
 
-int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion )
+extern "C" {
+
+	int GetEntityAPI( DLL_FUNCTIONS *pFunctionTable, int interfaceVersion )
 {
 	if ( !pFunctionTable || interfaceVersion != INTERFACE_VERSION )
 	{
@@ -119,6 +121,8 @@ int GetEntityAPI2( DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion )
 	
 	memcpy( pFunctionTable, &gFunctionTable, sizeof( DLL_FUNCTIONS ) );
 	return TRUE;
+}
+
 }
 
 
@@ -293,6 +297,7 @@ CBaseEntity *FindGlobalEntity( string_t classname, string_t globalname )
 	return pReturn;
 }
 
+
 int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity )
 {
 	CBaseEntity *pEntity = (CBaseEntity *)GET_PRIVATE(pent);
@@ -401,7 +406,6 @@ int DispatchRestore( edict_t *pent, SAVERESTOREDATA *pSaveData, int globalEntity
 			}
 		}
 	}
-
 	return 0;
 }
 
@@ -633,17 +637,17 @@ void SetObjectCollisionBox( entvars_t *pev )
 		max = 0;
 		for (i=0 ; i<3 ; i++)
 		{
-			v = fabs( pev->mins[i]);
+			v = fabs( ((float *)pev->mins)[i]);
 			if (v > max)
 				max = v;
-			v = fabs( pev->maxs[i]);
+			v = fabs( ((float *)pev->maxs)[i]);
 			if (v > max)
 				max = v;
 		}
 		for (i=0 ; i<3 ; i++)
 		{
-			pev->absmin[i] = pev->origin[i] - max;
-			pev->absmax[i] = pev->origin[i] + max;
+			((float *)pev->absmin)[i] = ((float *)pev->origin)[i] - max;
+			((float *)pev->absmax)[i] = ((float *)pev->origin)[i] + max;
 		}
 	}
 	else
@@ -764,9 +768,5 @@ CBaseEntity * CBaseEntity::Create( char *szName, const Vector &vecOrigin, const 
 	DispatchSpawn( pEntity->edict() );
 	return pEntity;
 }
-
-
-
-
 
 

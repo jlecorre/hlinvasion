@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef VGUI_LABEL_H
 #define VGUI_LABEL_H
@@ -5,6 +11,7 @@
 #include<VGUI.h>
 #include<VGUI_Panel.h>
 #include<VGUI_Scheme.h>
+#include<VGUI_Image.h>
 
 //TODO: this should use a TextImage for the text
 
@@ -34,6 +41,11 @@ public:
 	Label(const char* text,int x,int y,int wide,int tall);
 	Label(const char* text,int x,int y);
 	Label(const char* text);
+	
+	inline Label() : Panel(0,0,10,10)
+	{
+		init(1,"",true);
+	}
 private:
 	void init(int textBufferLen,const char* text,bool textFitted);
 public:

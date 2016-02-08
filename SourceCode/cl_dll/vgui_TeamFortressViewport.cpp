@@ -44,7 +44,8 @@
 #include "camera.h"
 #include "in_defs.h"
 #include "parsemsg.h"
-#include "../engine/keydefs.h"
+#include "pm_shared.h"
+#include "keydefs.h"
 #include "demo.h"
 #include "demo_api.h"
 
@@ -52,6 +53,8 @@
 #include "vgui_TeamFortressViewport.h"
 #include "vgui_ServerBrowser.h"
 #include "vgui_ScorePanel.h"
+//#include "vgui_SpectatorPanel.h"
+
 
 extern int g_iVisibleMouse;
 class CCommandMenu;
@@ -541,10 +544,10 @@ TeamFortressViewport::TeamFortressViewport(int x,int y,int wide,int tall) : Pane
 	CreateSpectatorMenu();
 	CreateOrdiMenu();		//modif de Julien
 	CreateOrdiControl();	//modif de Julien
-	CreateKeypad();	//modif de Julien
+	CreateKeypad();	//modif de Julien //@linux --> SIGSEV
 	CreateSoin();	//modif de Julien
 	CreateRadio();	//modif de Julien
-
+	CreateMouse();
 }
 
 //-----------------------------------------------------------------------------
@@ -620,7 +623,7 @@ void TeamFortressViewport::Initialize( void )
 		strcpy(m_sTeamNames[i], "");
 	}
 
-	App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::SchemeCursor::scu_none) );
+	App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::scu_none) );
 }
 
 class CException;
@@ -632,6 +635,7 @@ void TeamFortressViewport::CreateCommandMenu( void )
 	// COMMAND MENU
 	// Create the root of the Command Menu
 	m_pCommandMenus[0] = new CCommandMenu(NULL, 0, CMENU_TOP, CMENU_SIZE_X, 300);	// This will be resized once we know how many items are in it
+	int newIndex = m_iNumMenus;
 	m_pCommandMenus[0]->setParent(this);
 	m_pCommandMenus[0]->setVisible(false);
 	m_iNumMenus = 1;
@@ -644,11 +648,13 @@ void TeamFortressViewport::CreateCommandMenu( void )
 	{
 		gEngfuncs.Con_DPrintf( "Unable to open commandmenu.txt\n");
 		SetCurrentCommandMenu( NULL );
-		return;
+		return newIndex;
 	}
 
+#ifdef _WIN32
 try
 {
+#endif
 	// First, read in the localisation strings
 
 	// Detpack strings
@@ -657,7 +663,7 @@ try
 	gHUD.m_TextMessage.LocaliseTextString( "#DetpackSet_For50Seconds",   m_sDetpackStrings[2], MAX_BUTTON_SIZE );
 
 	// Now start parsing the menu structure
-	m_pCurrentCommandMenu = m_pCommandMenus[0];
+	m_pCurrentCommandMenu = m_pCommandMenus[newIndex];
 	char szLastButtonText[32] = "file start";
 	pfile = gEngfuncs.COM_ParseFile(pfile, token);
 	while ( ( strlen ( token ) > 0 ) && ( m_iNumMenus < MAX_MENUS ) )
@@ -682,7 +688,7 @@ try
 			{
 				gEngfuncs.Con_Printf("Error in Commandmenu.txt file after '%s'.\n", szLastButtonText );
 				m_iInitialized = false;
-				return;
+				return newIndex;
 			}
 
 			// token should already be the bound key, or the custom name
@@ -829,6 +835,7 @@ try
 
 		pfile = gEngfuncs.COM_ParseFile(pfile, token);
 	}
+#ifdef _WIN32
 }
 catch( CException *e )
 {
@@ -836,14 +843,16 @@ catch( CException *e )
 	//e->Delete();
 	e = NULL;
 	m_iInitialized = false;
-	return;
+	return newIndex;
 }
+#endif
 
 	SetCurrentMenu( NULL );
 	SetCurrentCommandMenu( NULL );
 	gEngfuncs.COM_FreeFile( pfile );
 
 	m_iInitialized = true;
+	return newIndex;
 }
 
 //-----------------------------------------------------------------------------
@@ -1292,7 +1301,7 @@ void TeamFortressViewport::InputPlayerSpecial( void )
 	else
 	{
 		// if it's any other class, just send the command down to the server
-		ClientCmd( "_special" );
+		EngineClientCmd( "_special" );
 	}
 }
 
@@ -1381,7 +1390,7 @@ CMenuPanel* TeamFortressViewport::CreateTextWindow( int iTextToShow )
 	char sz[256];
 	char *cText;
 	char *pfile = NULL;
-	static const int MAX_TITLE_LENGTH = 32;
+	static const int MAX_TITLE_LENGTH = 64;
 	char cTitle[MAX_TITLE_LENGTH];
 
 	if ( iTextToShow == SHOW_MOTD )
@@ -1389,8 +1398,8 @@ CMenuPanel* TeamFortressViewport::CreateTextWindow( int iTextToShow )
 		if (!m_szServerName || !m_szServerName[0])
 			strcpy( cTitle, "Half-Life" );
 		else
-			strncpy( cTitle, m_szServerName, MAX_TITLE_LENGTH );
-		cTitle[MAX_TITLE_LENGTH-1] = 0;
+			strncpy( cTitle, m_szServerName, sizeof(cTitle) );
+		cTitle[sizeof(cTitle)-1] = 0;
 		cText = m_szMOTD;
 	}
 	else if ( iTextToShow == SHOW_MAPBRIEFING )
@@ -1550,6 +1559,7 @@ void TeamFortressViewport::ShowVGUIMenu( int iMenu )
 	//modif de Julien
 	case MENU_KEYPAD:
 		pNewMenu = ShowKeypad();
+		ShowMouse(true);
 		break;
 
 	//modif de Julien
@@ -1715,8 +1725,29 @@ CMenuPanel* TeamFortressViewport :: ShowKeypad()
     m_pKeypad->Reset();
     return m_pKeypad;
 }
+//@linux init Mouse
+void TeamFortressViewport::CreateMouse()
+{
+	mCustomCursor = new CImageLabel( "mouse",0,0 );
+	mCustomCursor->setParent( this );
+	mCustomCursor->setVisible(false);
+}
+void TeamFortressViewport::ShowMouse(bool visible) 
+{
+	mCustomCursor->setVisible(visible);
+}
+void TeamFortressViewport::SetMousePos(int x,int y) 
+{
+	mCustomCursor->setPos(x,y);
+}
+void TeamFortressViewport::UpdateCursor() 
+{	
+	//UpdateCursorState();
+	int x,y;
+	gEngfuncs.GetMousePosition(&x,&y);
+	SetMousePos(x,y);
 
-
+}
 
 
 //======================================================================================
@@ -1783,15 +1814,16 @@ void TeamFortressViewport::UpdateOnPlayerInfo()
 		m_pClassMenu->Update();
 	if (m_pScoreBoard)
 		m_pScoreBoard->Update();
+
 }
 
 void TeamFortressViewport::UpdateCursorState()
 {
 	// Need cursor if any VGUI window is up
-	if ( m_pCurrentMenu || m_pTeamMenu->isVisible() || m_pServerBrowser->isVisible() )
+	if ( m_pCurrentMenu || m_pTeamMenu->isVisible() || m_pServerBrowser->isVisible() /*|| m_pKeypad>isVisible()*/ )
 	{
 		g_iVisibleMouse = true;
-		App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::SchemeCursor::scu_arrow) );
+		App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::scu_arrow) );
 		return;
 	}
 	else if ( m_pCurrentCommandMenu )
@@ -1800,14 +1832,14 @@ void TeamFortressViewport::UpdateCursorState()
 		if ( gHUD.m_pCvarStealMouse->value != 0.0f )
 		{
 			g_iVisibleMouse = true;
-			App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::SchemeCursor::scu_arrow) );
+			App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::scu_arrow) );
 			return;
 		}
 	}
 
 	IN_ResetMouse();
 	g_iVisibleMouse = false;
-	App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::SchemeCursor::scu_none) );
+	App::getInstance()->setCursorOveride( App::getInstance()->getScheme()->getCursor(Scheme::scu_none) );
 }
 
 void TeamFortressViewport::UpdateHighlights()
@@ -1829,6 +1861,14 @@ void TeamFortressViewport::GetAllPlayersInfo( void )
 
 void TeamFortressViewport::paintBackground()
 {
+	//@linux
+	if(m_pKeypad->isVisible() || m_pSoin->isVisible())
+	{
+		UpdateCursor();
+		ShowMouse(true);
+	} else {
+		ShowMouse(false);
+	}
 	// See if the command menu is visible and needs recalculating due to some external change
 	if ( g_iTeamNumber != m_iCurrentTeamNumber )
 	{
@@ -2301,7 +2341,6 @@ int TeamFortressViewport::MsgFunc_Keypad(const char *pszName, int iSize, void *p
 		CKeypad *pKeypad = (CKeypad*)pNewMenu;
 		pKeypad->m_iCode = READ_LONG ();
 		pKeypad->m_iEnt = READ_LONG ();
-
 
 		// Close the Command Menu if it's open
 		HideCommandMenu();

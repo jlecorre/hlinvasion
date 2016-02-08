@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #include<VGUI_HeaderPanel.h>
 #include<VGUI_TablePanel.h>
@@ -109,7 +115,7 @@ public:
 
 	void DoCancel( void )
 	{
-		ClientCmd( "togglebrowser\n" );
+		EngineClientCmd( "togglebrowser\n" );
 	}
 
 	void DoConnect( void )
@@ -127,7 +133,7 @@ public:
 
 		sprintf( sz, "connect %s\n", address );
 
-		ClientCmd( sz );
+		EngineClientCmd( sz );
 
 		DoCancel();
 	}

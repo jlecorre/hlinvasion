@@ -499,7 +499,8 @@ void CRpggrunt :: Shoot ( void )
 	}
 
 	Vector vecShootOrigin;
-	GetAttachment( 0, vecShootOrigin, Vector(0,0,0) );
+	Vector vec_null = Vector(0,0,0);
+	GetAttachment( 0, vecShootOrigin, vec_null);
 
 	Vector vecShootDir = m_hEnemy->Center() - vecShootOrigin;
 //	UTIL_ParticleEffect ( vecShootOrigin, UTIL_VecToAngles( vecShootDir ), 600, 255 );	// effet super mario hyper flashy tendance, mais déplacé
@@ -606,8 +607,8 @@ void CRpggrunt :: GibMonster ( void )
 
 	Vector	vecGunPos = GetGunPosition ();
 	Vector	vecGunAngles;
-
-	GetAttachment( 0, Vector(0,0,0), vecGunAngles );
+	Vector vec_null = Vector(0,0,0);
+	GetAttachment( 0, vec_null, vecGunAngles );
 	DropItem( "weapon_rpg", vecGunPos, vecGunAngles );
 
 	CBaseMonster :: GibMonster();

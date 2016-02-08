@@ -112,7 +112,7 @@ CRpgRocket *CRpgRocket::CreateRpgRocket( Vector vecOrigin, Vector vecAngles, CBa
 		pRocket->m_pLauncher = NULL;
 
 	pRocket->Spawn();
-	pRocket->SetTouch( CRpgRocket::RocketTouch );
+	pRocket->SetTouch( &CRpgRocket::RocketTouch );
 
 	if ( pOwner != NULL )
 		pRocket->pev->owner = pOwner->edict();
@@ -144,7 +144,7 @@ void CRpgRocket :: Spawn( void )
 
 	pev->classname = MAKE_STRING("rpg_rocket");
 
-	SetThink( IgniteThink );
+	SetThink( &CRpgRocket::IgniteThink );
 	pev->nextthink = gpGlobals->time + 0.1;		//modif de Julien : 0.4
 
 	pev->angles.x -= 30;
@@ -234,7 +234,7 @@ void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
 
 			MESSAGE_END();
 
-			SetThink ( ElectroThink );
+			SetThink ( &CRpgRocket::ElectroThink );
 			pev->nextthink	= gpGlobals->time + 0.1;
 			m_flDiskTime	= gpGlobals->time;
 			m_flLastRadius	= 0.0;						// pour coller avec la dll client
@@ -342,7 +342,7 @@ void CRpgRocket :: RocketTouch ( CBaseEntity *pOther )
 				}
 			}
 
-			SetThink ( SUB_Remove );
+			SetThink ( &CRpgRocket::SUB_Remove );
 			pev->nextthink = gpGlobals->time + 0.1;
 
 
@@ -390,7 +390,7 @@ void CRpgRocket :: ElectroThink ( void )
 {
 	if ( m_flLastRadius > ELECTRO_DISK_MAX )
 	{
-		SetThink ( SUB_Remove );
+		SetThink ( &CRpgRocket::SUB_Remove );
 		pev->nextthink = gpGlobals->time + 0.1;
 		return;
 	}
@@ -477,7 +477,7 @@ void CRpgRocket :: IgniteThink( void  )
 	m_flIgniteTime = gpGlobals->time;
 
 	// set to follow laser spot
-	SetThink( FollowThink );
+	SetThink( &CRpgRocket::FollowThink );
 	pev->nextthink = gpGlobals->time + 0.1;
 }
 
