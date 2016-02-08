@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -25,19 +25,12 @@
 #include "cbase.h"
 #include "saverestore.h"
 #include <time.h>
-#include "../engine/shake.h"
+#include "shake.h"
 #include "decals.h"
 #include "player.h"
 #include "weapons.h"
 #include "gamerules.h"
 
-/*
-=====================
-UTIL_WeaponTimeBase
-
-Time basis for weapons ( zero based of predicting client weapons )
-=====================
-*/
 float UTIL_WeaponTimeBase( void )
 {
 #if defined( CLIENT_WEAPONS )
@@ -89,7 +82,6 @@ UTIL_SharedRandomLong
 */
 int UTIL_SharedRandomLong( unsigned int seed, int low, int high )
 {
-
 	unsigned int range;
 
 	U_Srand( (int)seed + low + high );
@@ -692,7 +684,7 @@ void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, f
 	{
 		CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
 
-		if ( !pPlayer || !(pPlayer->pev->flags & FL_ONGROUND) )	// Don't shake if not onground//modif de Julien
+		if ( !pPlayer || !(pPlayer->pev->flags & FL_ONGROUND) )	// Don't shake if not onground
 			continue;
 
 		localAmplitude = 0;
@@ -1011,7 +1003,9 @@ float UTIL_VecToYaw( const Vector &vec )
 
 void UTIL_SetOrigin( entvars_t *pev, const Vector &vecOrigin )
 {
-	SET_ORIGIN(ENT(pev), vecOrigin );
+	edict_t *ent = ENT(pev);
+	if ( ent )
+		SET_ORIGIN( ent, vecOrigin );
 }
 
 void UTIL_ParticleEffect( const Vector &vecOrigin, const Vector &vecDirection, ULONG ulColor, ULONG ulCount )
@@ -1711,7 +1705,11 @@ static int gSizes[FIELD_TYPECOUNT] =
 	sizeof(float)*3,	// FIELD_POSITION_VECTOR
 	sizeof(int *),		// FIELD_POINTER
 	sizeof(int),		// FIELD_INTEGER
-	sizeof(int *),		// FIELD_FUNCTION
+#ifdef GNUC
+	sizeof(int *)*2,		// FIELD_FUNCTION
+#else
+	sizeof(int *),		// FIELD_FUNCTION	
+#endif
 	sizeof(int),		// FIELD_BOOLEAN
 	sizeof(short),		// FIELD_SHORT
 	sizeof(char),		// FIELD_CHARACTER
@@ -1822,7 +1820,8 @@ void CSaveRestoreBuffer :: BufferRewind( int size )
 
 #ifndef _WIN32
 extern "C" {
-    unsigned _rotr ( unsigned val, int shift) {
+unsigned _rotr ( unsigned val, int shift)
+{
         register unsigned lobit;        /* non-zero means lo bit set */
         register unsigned num = val;    /* number to rotate */
 
@@ -1837,7 +1836,7 @@ extern "C" {
         }
 
         return num;
-    }
+}
 }
 #endif
 
@@ -2020,11 +2019,11 @@ void CSave :: WritePositionVector( const char *pname, const float *value, int co
 }
 
 
-void CSave :: WriteFunction( const char *pname, const int *data, int count )
+void CSave :: WriteFunction( const char *pname, void **data, int count )
 {
 	const char *functionName;
 
-	functionName = NAME_FOR_FUNCTION( *data );
+	functionName = NAME_FOR_FUNCTION( (uint32)*data );
 	if ( functionName )
 		BufferField( pname, strlen(functionName) + 1, functionName );
 	else
@@ -2188,7 +2187,7 @@ int CSave :: WriteFields( const char *pname, void *pBaseData, TYPEDESCRIPTION *p
 		break;
 
 		case FIELD_FUNCTION:
-			WriteFunction( pTest->fieldName, (int *)(char *)pOutputData, pTest->fieldSize );
+			WriteFunction( pTest->fieldName, (void **)pOutputData, pTest->fieldSize );
 		break;
 		default:
 			ALERT( at_error, "Bad field type\n" );

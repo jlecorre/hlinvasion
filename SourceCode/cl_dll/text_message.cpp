@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -163,22 +163,23 @@ int CHudTextMessage::MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf
 
 	int msg_dest = READ_BYTE();
 
-	static char szBuf[6][128];
+#define MSG_BUF_SIZE 128
+	static char szBuf[6][MSG_BUF_SIZE];
 	char *msg_text = LookupString( READ_STRING(), &msg_dest );
-	msg_text = strcpy( szBuf[0], msg_text );
+	msg_text = safe_strcpy( szBuf[0], msg_text , MSG_BUF_SIZE);
 
 	// keep reading strings and using C format strings for subsituting the strings into the localised text string
 	char *sstr1 = LookupString( READ_STRING() );
-	sstr1 = strcpy( szBuf[1], sstr1 );
+	sstr1 = safe_strcpy( szBuf[1], sstr1 , MSG_BUF_SIZE);
 	StripEndNewlineFromString( sstr1 );  // these strings are meant for subsitution into the main strings, so cull the automatic end newlines
 	char *sstr2 = LookupString( READ_STRING() );
-	sstr2 = strcpy( szBuf[2], sstr2 );
+	sstr2 = safe_strcpy( szBuf[2], sstr2 , MSG_BUF_SIZE);
 	StripEndNewlineFromString( sstr2 );
 	char *sstr3 = LookupString( READ_STRING() );
-	sstr3 = strcpy( szBuf[3], sstr3 );
+	sstr3 = safe_strcpy( szBuf[3], sstr3 , MSG_BUF_SIZE);
 	StripEndNewlineFromString( sstr3 );
 	char *sstr4 = LookupString( READ_STRING() );
-	sstr4 = strcpy( szBuf[4], sstr4 );
+	sstr4 = safe_strcpy( szBuf[4], sstr4 , MSG_BUF_SIZE);
 	StripEndNewlineFromString( sstr4 );
 	char *psz = szBuf[5];
 
@@ -188,23 +189,23 @@ int CHudTextMessage::MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf
 	switch ( msg_dest )
 	{
 	case HUD_PRINTCENTER:
-		sprintf( psz, msg_text, sstr1, sstr2, sstr3, sstr4 );
+		safe_sprintf( psz, MSG_BUF_SIZE, msg_text, sstr1, sstr2, sstr3, sstr4 );
 		CenterPrint( ConvertCRtoNL( psz ) );
 		break;
 
 	case HUD_PRINTNOTIFY:
 		psz[0] = 1;  // mark this message to go into the notify buffer
-		sprintf( psz+1, msg_text, sstr1, sstr2, sstr3, sstr4 );
+		safe_sprintf( psz+1, MSG_BUF_SIZE, msg_text, sstr1, sstr2, sstr3, sstr4 );
 		ConsolePrint( ConvertCRtoNL( psz ) );
 		break;
 
 	case HUD_PRINTTALK:
-		sprintf( psz, msg_text, sstr1, sstr2, sstr3, sstr4 );
+		safe_sprintf( psz, MSG_BUF_SIZE, msg_text, sstr1, sstr2, sstr3, sstr4 );
 		gHUD.m_SayText.SayTextPrint( ConvertCRtoNL( psz ), 128 );
 		break;
 
 	case HUD_PRINTCONSOLE:
-		sprintf( psz, msg_text, sstr1, sstr2, sstr3, sstr4 );
+		safe_sprintf( psz, MSG_BUF_SIZE, msg_text, sstr1, sstr2, sstr3, sstr4 );
 		ConsolePrint( ConvertCRtoNL( psz ) );
 		break;
 	}

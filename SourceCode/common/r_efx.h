@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -14,7 +14,9 @@
 ****/
 #if !defined ( R_EFXH )
 #define R_EFXH
+#ifdef _WIN32
 #pragma once
+#endif
 
 // particle_t
 #if !defined( PARTICLEDEFH )  
@@ -83,7 +85,6 @@ color24 gTracerColors[] =
 #define FTENT_NOMODEL			0x00040000 // Doesn't have a model, never try to draw ( it just triggers other things )
 #define FTENT_CLIENTCUSTOM		0x00080000 // Must specify callback.  Callback function is responsible for killing tempent and updating fields ( unless other flags specify how to do things )
 
-typedef struct tempent_s	TEMPENTITY;
 typedef struct tempent_s
 {
 	int			flags;
@@ -97,7 +98,7 @@ typedef struct tempent_s
 	int			hitSound;
 	void		( *hitcallback )	( struct tempent_s *ent, struct pmtrace_s *ptr );
 	void		( *callback )		( struct tempent_s *ent, float frametime, float currenttime );
-	TEMPENTITY	*next;
+	struct tempent_s	*next;
 	int			priority;
 	short		clientIndex;	// if attached, this is the index of the client to stick to
 								// if COLLIDEALL, this is the index of the client to ignore
@@ -187,6 +188,8 @@ struct efx_api_s
 	TEMPENTITY	*( *CL_TentEntAllocCustom )		( float *origin, struct model_s *model, int high, void ( *callback ) ( struct tempent_s *ent, float frametime, float currenttime ) );
 	void		( *R_GetPackedColor )			( short *packed, short color );
 	short		( *R_LookupColor )				( unsigned char r, unsigned char g, unsigned char b );
+	void		( *R_DecalRemoveAll )			( int textureIndex ); //textureIndex points to the decal index in the array, not the actual texture index.
+	void		( *R_FireCustomDecal )			( int textureIndex, int entity, int modelIndex, float * position, int flags, float scale );
 };
 
 extern efx_api_t efx;

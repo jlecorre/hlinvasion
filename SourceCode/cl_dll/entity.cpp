@@ -10,17 +10,18 @@
 #include "r_efx.h"
 #include "event_api.h"
 #include "pm_defs.h"
-#include "pmtrace.h"
+#include "pmtrace.h"	
+#include "pm_shared.h"
+#include "bench.h"
+#include "Exports.h"
 
 //modif de Julien
 #include "eventscripts.h"	
 
-#define DLLEXPORT __declspec( dllexport )
-
 void Game_AddObjects( void );
 
 extern vec3_t v_origin;
-
+/*
 extern "C" 
 {
 	int DLLEXPORT HUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname );
@@ -31,7 +32,7 @@ extern "C"
 	void DLLEXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct entity_state_s *pps, struct clientdata_s *pcd, const struct clientdata_s *ppcd, struct weapon_data_s *wd, const struct weapon_data_s *pwd );
 	void DLLEXPORT HUD_TempEntUpdate( double frametime, double client_time, double cl_gravity, struct tempent_s **ppTempEntFree, struct tempent_s **ppTempEntActive, int ( *Callback_AddVisibleEntity )( struct cl_entity_s *pEntity ), void ( *Callback_TempEntPlaySound )( struct tempent_s *pTemp, float damp ) );
 	struct cl_entity_s DLLEXPORT *HUD_GetUserEntity( int index );
-}
+}*/
 
 /*
 ========================
@@ -39,7 +40,7 @@ HUD_AddEntity
 	Return 0 to filter entity from visible list for rendering
 ========================
 */
-int DLLEXPORT HUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname )
+int CL_DLLEXPORT HUD_AddEntity( int type, struct cl_entity_s *ent, const char *modelname )
 {
 	switch ( type )
 	{
@@ -64,7 +65,7 @@ playerstate update in entity_state_t.  In order for these overrides to eventuall
 structure, we need to copy them into the state structure at this point.
 =========================
 */
-void DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client )
+void CL_DLLEXPORT HUD_TxferLocalOverrides( struct entity_state_s *state, const struct clientdata_s *client )
 {
 	VectorCopy( client->origin, state->origin );
 
@@ -81,7 +82,7 @@ We have received entity_state_t for this player over the network.  We need to co
 playerstate structure
 =========================
 */
-void DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src )
+void CL_DLLEXPORT HUD_ProcessPlayerState( struct entity_state_s *dst, const struct entity_state_s *src )
 {
 	// Copy in network data
 	VectorCopy( src->origin, dst->origin );
@@ -145,7 +146,7 @@ Because we can predict an arbitrary number of frames before the server responds 
  update is occupying.
 =========================
 */
-void DLLEXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct entity_state_s *pps, struct clientdata_s *pcd, const struct clientdata_s *ppcd, struct weapon_data_s *wd, const struct weapon_data_s *pwd )
+void CL_DLLEXPORT HUD_TxferPredictionData ( struct entity_state_s *ps, const struct entity_state_s *pps, struct clientdata_s *pcd, const struct clientdata_s *ppcd, struct weapon_data_s *wd, const struct weapon_data_s *pwd )
 {
 	ps->oldbuttons				= pps->oldbuttons;
 	ps->flFallVelocity			= pps->flFallVelocity;
@@ -456,7 +457,7 @@ HUD_CreateEntities
 Gives us a chance to add additional entities to the render this frame
 =========================
 */
-void DLLEXPORT HUD_CreateEntities( void )
+void CL_DLLEXPORT HUD_CreateEntities( void )
 {
 	// e.g., create a persistent cl_entity_t somewhere.
 	// Load an appropriate model into it ( gEngfuncs.CL_LoadModel )
@@ -493,7 +494,7 @@ The entity's studio model description indicated an event was
 fired during this frame, handle the event by it's tag ( e.g., muzzleflash, sound )
 =========================
 */
-void DLLEXPORT HUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity )
+void CL_DLLEXPORT HUD_StudioEvent( const struct mstudioevent_s *event, const struct cl_entity_s *entity )
 {
 	switch( event->event )
 	{
@@ -529,7 +530,7 @@ CL_UpdateTEnts
 Simulation and cleanup of temporary entities
 =================
 */
-void DLLEXPORT HUD_TempEntUpdate (
+void CL_DLLEXPORT HUD_TempEntUpdate (
 	double frametime,   // Simulation time
 	double client_time, // Absolute time on client
 	double cl_gravity,  // True gravity on client
@@ -538,6 +539,8 @@ void DLLEXPORT HUD_TempEntUpdate (
 	int		( *Callback_AddVisibleEntity )( cl_entity_t *pEntity ),
 	void	( *Callback_TempEntPlaySound )( TEMPENTITY *pTemp, float damp ) )
 {
+//	RecClTempEntUpdate(frametime, client_time, cl_gravity, ppTempEntFree, ppTempEntActive, Callback_AddVisibleEntity, Callback_TempEntPlaySound);
+
 	static int gTempEntFrame = 0;
 	int			i;
 	TEMPENTITY	*pTemp, *pnext, *pprev;
@@ -584,10 +587,8 @@ void DLLEXPORT HUD_TempEntUpdate (
 	gravity = -frametime * cl_gravity;
 	gravitySlow = gravity * 0.5;
 
-
 	while ( pTemp )
 	{
-
 		int active;
 
 		active = 1;
@@ -676,6 +677,7 @@ void DLLEXPORT HUD_TempEntUpdate (
 				pTemp->entity.origin[1] += pTemp->entity.baseline.origin[1] * frametime + 4 * sin( client_time * 30 + (int)pTemp );
 				pTemp->entity.origin[2] += pTemp->entity.baseline.origin[2] * frametime;
 			}
+			
 			else 
 			{
 				for ( i = 0; i < 3; i++ ) 
@@ -903,8 +905,10 @@ If you specify negative numbers for beam start and end point entities, then
 Indices must start at 1, not zero.
 =================
 */
-cl_entity_t DLLEXPORT *HUD_GetUserEntity( int index )
+cl_entity_t CL_DLLEXPORT *HUD_GetUserEntity( int index )
 {
+//	RecClGetUserEntity(index);
+
 #if defined( BEAM_TEST )
 	// None by default, you would return a valic pointer if you create a client side
 	//  beam and attach it to a client side entity.

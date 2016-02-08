@@ -70,7 +70,7 @@ void CTriggerSubModel :: Spawn ( void )
 	pev->movetype		= MOVETYPE_NONE;	
 	pev->takedamage		= DAMAGE_NO;
 
-	SetUse ( ChangeSub );
+	SetUse ( &CTriggerSubModel::ChangeSub );
 }
 
 void CTriggerSubModel :: KeyValue( KeyValueData *pkvd )

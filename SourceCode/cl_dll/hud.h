@@ -28,6 +28,10 @@
 
 #define CONPRINTF		gEngfuncs.Con_Printf
 
+#ifndef _WIN32
+#define _cdecl 
+#endif
+
 
 #include "wrect.h"
 #include "cl_dll.h"
@@ -96,7 +100,7 @@ struct HUDLIST {
 //
 //-----------------------------------------------------
 //
-#include "..\game_shared\voice_status.h"
+#include "voice_status.h" // base voice handling class
 #include "hud_spectator.h"
 
 
@@ -387,6 +391,12 @@ public:
 	int MsgFunc_SayText( const char *pszName, int iSize, void *pbuf );
 	void SayTextPrint( const char *pszBuf, int iBufSize, int clientIndex = -1 );
 	void EnsureTextFitsInOneLineAndWrapIfHaveTo( int line );
+friend class CHudSpectator;
+
+private:
+
+	struct cvar_s *	m_HUD_saytext;
+	struct cvar_s *	m_HUD_saytext_time;
 };
 
 //
@@ -501,6 +511,7 @@ public:
 	int VidInit( void );
 	int Draw(float flTime);
 	int MsgFunc_HudText(const char *pszName, int iSize, void *pbuf);
+	int MsgFunc_HudTextPro(const char *pszName, int iSize, void *pbuf);
 	int MsgFunc_GameTitle(const char *pszName, int iSize, void *pbuf);
 
 	float FadeBlend( float fadein, float fadeout, float hold, float localTime );
@@ -508,6 +519,7 @@ public:
 	int YPosition( float y, int height );
 
 	void MessageAdd( const char *pName, float time );
+	void MessageAdd(client_textmessage_t * newMessage );
 	void MessageDrawScan( client_textmessage_t *pMessage, float time );
 	void MessageScanStart( void );
 	void MessageScanNextChar( void );
@@ -1114,6 +1126,7 @@ public:
 	int _cdecl MsgFunc_Logo(const char *pszName,  int iSize, void *pbuf);
 	int _cdecl MsgFunc_ResetHUD(const char *pszName,  int iSize, void *pbuf);
 	void _cdecl MsgFunc_InitHUD( const char *pszName, int iSize, void *pbuf );
+	void _cdecl MsgFunc_ViewMode( const char *pszName, int iSize, void *pbuf );
 	int _cdecl MsgFunc_SetFOV(const char *pszName,  int iSize, void *pbuf);
 	int  _cdecl MsgFunc_Concuss( const char *pszName, int iSize, void *pbuf );
 	// Screen information

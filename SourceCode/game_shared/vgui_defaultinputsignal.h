@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #endif
 
 
-#include "vgui_inputsignal.h"
+#include "VGUI_InputSignal.h"
 
 
 namespace vgui

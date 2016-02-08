@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -594,9 +594,11 @@
 #define	CHAN_VOICE			2
 #define CHAN_ITEM			3
 #define	CHAN_BODY			4
-#define CHAN_STREAM			5		// allocate stream channel from the static or dynamic area
-#define CHAN_STATIC			6		// allocate channel from the static area 
-
+#define CHAN_STREAM			5			// allocate stream channel from the static or dynamic area
+#define CHAN_STATIC			6			// allocate channel from the static area 
+#define CHAN_NETWORKVOICE_BASE	7		// voice data coming across the network
+#define CHAN_NETWORKVOICE_END	500		// network voice data reserves slots (CHAN_NETWORKVOICE_BASE through CHAN_NETWORKVOICE_END).
+#define CHAN_BOT			501			// channel used for bot chatter.
 
 // attenuation values
 #define ATTN_NONE		0
@@ -690,8 +692,8 @@ enum
 };
 
 
-typedef int	func_t;
-typedef int	string_t;
+typedef unsigned int	func_t;
+typedef unsigned int	string_t;
 
 typedef unsigned char 		byte;
 typedef unsigned short 		word;

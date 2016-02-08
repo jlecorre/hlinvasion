@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -44,21 +44,37 @@ static int PM_boxpnt[6][4] =
 void PM_ShowClipBox( void )
 {
 #if defined( _DEBUG )
+	vec3_t org;
+	vec3_t offset = { 0, 0, 0 };
+
 	if ( !pmove->runfuncs )
 		return;
 
 	// More debugging, draw the particle bbox for player and for the entity we are looking directly at.
 	//  aslo prints entity info to the console overlay.
-	if ( !pmove->server )
-		return;
+	//if ( !pmove->server )
+	//	return;
 
 	// Draw entity in center of view
 	// Also draws the normal to the clip plane that intersects our movement ray.  Leaves a particle
 	//  trail at the intersection point.
 	PM_ViewEntity();
 
+	VectorCopy( pmove->origin, org );
+
+	if ( pmove->server )
+	{
+		VectorAdd( org, offset, org );
+	}
+	else
+	{
+		VectorSubtract( org, offset, org );
+	}
+
 	// Show our BBOX in particles.
- 	//PM_DrawBBox( pmove->player_mins[pmove->usehull], pmove->player_maxs[pmove->usehull], pmove->origin, 132, 0.1 );
+	PM_DrawBBox( pmove->player_mins[pmove->usehull], pmove->player_maxs[pmove->usehull], org, pmove->server ? 132 : 0, 0.1 );
+
+	PM_ParticleLine( org, org, pmove->server ? 132 : 0, 0.1, 5.0 );
 /*
 	{
 		int i;

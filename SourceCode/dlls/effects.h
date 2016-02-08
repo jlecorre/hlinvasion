@@ -79,7 +79,7 @@ public:
 
 	inline void AnimateAndDie( float framerate ) 
 	{ 
-		SetThink(AnimateUntilDead); 
+		SetThink(&CSprite::AnimateUntilDead); 
 		pev->framerate = framerate;
 		pev->dmgtime = gpGlobals->time + (m_maxFrame / framerate); 
 		pev->nextthink = gpGlobals->time; 
@@ -168,7 +168,7 @@ public:
 
 	static CBeam *BeamCreate( const char *pSpriteName, int width );
 
-	inline void LiveForTime( float time ) { SetThink(SUB_Remove); pev->nextthink = gpGlobals->time + time; }
+	inline void LiveForTime( float time ) { SetThink(&CBeam::SUB_Remove); pev->nextthink = gpGlobals->time + time; }
 	inline void	BeamDamageInstant( TraceResult *ptr, float damage ) 
 	{ 
 		pev->dmg = damage; 
@@ -208,7 +208,7 @@ public:
 
 
 //modif de Julien
-
+/*
 class CLightning : public CBeam
 {
 public:
@@ -253,6 +253,6 @@ public:
 
 	float	m_radius;
 };
-
+*/
 
 #endif		//EFFECTS_H

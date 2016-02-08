@@ -1,3 +1,4 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 
 #include"vgui_ConsolePanel.h"
 #include"hud.h"

@@ -1,3 +1,10 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
+
 #if !defined( NET_APIH )
 #define NET_APIH
 #ifdef _WIN32

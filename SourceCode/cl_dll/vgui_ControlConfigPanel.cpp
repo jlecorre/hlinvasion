@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #include<stdio.h>
 #include"vgui_ControlConfigPanel.h"

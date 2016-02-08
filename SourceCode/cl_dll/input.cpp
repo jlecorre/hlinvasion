@@ -17,18 +17,15 @@ extern "C"
 #include "camera.h"
 #include "in_defs.h"
 #include "view.h"
+//#include "bench.h"
 #include <string.h>
 #include <ctype.h>
+#include "Exports.h"
 
 #include "vgui_TeamFortressViewport.h"
 
-extern "C" 
-{
-	struct kbutton_s DLLEXPORT *KB_Find( const char *name );
-	void DLLEXPORT CL_CreateMove ( float frametime, struct usercmd_s *cmd, int active );
-	void DLLEXPORT HUD_Shutdown( void );
-	int DLLEXPORT HUD_Key_Event( int eventcode, int keynum, const char *pszCurrentBinding );
-}
+
+extern int g_iAlive;
 
 extern int g_weaponselect;
 extern cl_enginefunc_t gEngfuncs;
@@ -209,8 +206,10 @@ KB_Find
 Allows the engine to get a kbutton_t directly ( so it can check +mlook state, etc ) for saving out to .cfg files
 ============
 */
-struct kbutton_s DLLEXPORT *KB_Find( const char *name )
+struct kbutton_s CL_DLLEXPORT *KB_Find( const char *name )
 {
+//	RecClFindKey(name);
+
 	kblist_t *p;
 	p = g_kbkeys;
 	while ( p )
@@ -366,8 +365,10 @@ HUD_Key_Event
 Return 1 to allow engine to process the key, otherwise, act on it as needed
 ============
 */
-int DLLEXPORT HUD_Key_Event( int down, int keynum, const char *pszCurrentBinding )
+int CL_DLLEXPORT HUD_Key_Event( int down, int keynum, const char *pszCurrentBinding )
 {
+//	RecClKeyEvent(down, keynum, pszCurrentBinding);
+
 	if (gViewPort)
 		return gViewPort->KeyInput(down, keynum, pszCurrentBinding);
 	
@@ -389,18 +390,57 @@ void IN_LeftDown(void) {KeyDown(&in_left);}
 void IN_LeftUp(void) {KeyUp(&in_left);}
 void IN_RightDown(void) {KeyDown(&in_right);}
 void IN_RightUp(void) {KeyUp(&in_right);}
-void IN_ForwardDown(void) {KeyDown(&in_forward);}
-void IN_ForwardUp(void) {KeyUp(&in_forward);}
-void IN_BackDown(void) {KeyDown(&in_back);}
-void IN_BackUp(void) {KeyUp(&in_back);}
+
+void IN_ForwardDown(void)
+{
+	KeyDown(&in_forward);
+	gHUD.m_Spectator.HandleButtonsDown( IN_FORWARD );
+}
+
+void IN_ForwardUp(void)
+{
+	KeyUp(&in_forward);
+	gHUD.m_Spectator.HandleButtonsUp( IN_FORWARD );
+}
+
+void IN_BackDown(void)
+{
+	KeyDown(&in_back);
+	gHUD.m_Spectator.HandleButtonsDown( IN_BACK );
+}
+
+void IN_BackUp(void)
+{
+	KeyUp(&in_back);
+	gHUD.m_Spectator.HandleButtonsUp( IN_BACK );
+}
 void IN_LookupDown(void) {KeyDown(&in_lookup);}
 void IN_LookupUp(void) {KeyUp(&in_lookup);}
 void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
 void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-void IN_MoveleftDown(void) {KeyDown(&in_moveleft);}
-void IN_MoveleftUp(void) {KeyUp(&in_moveleft);}
-void IN_MoverightDown(void) {KeyDown(&in_moveright);}
-void IN_MoverightUp(void) {KeyUp(&in_moveright);}
+void IN_MoveleftDown(void)
+{
+	KeyDown(&in_moveleft);
+	gHUD.m_Spectator.HandleButtonsDown( IN_MOVELEFT );
+}
+
+void IN_MoveleftUp(void)
+{
+	KeyUp(&in_moveleft);
+	gHUD.m_Spectator.HandleButtonsUp( IN_MOVELEFT );
+}
+
+void IN_MoverightDown(void)
+{
+	KeyDown(&in_moveright);
+	gHUD.m_Spectator.HandleButtonsDown( IN_MOVERIGHT );
+}
+
+void IN_MoverightUp(void)
+{
+	KeyUp(&in_moveright);
+	gHUD.m_Spectator.HandleButtonsUp( IN_MOVERIGHT );
+}
 void IN_SpeedDown(void) {KeyDown(&in_speed);}
 void IN_SpeedUp(void) {KeyUp(&in_speed);}
 void IN_StrafeDown(void) {KeyDown(&in_strafe);}
@@ -408,18 +448,38 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 
 // needs capture by hud/vgui also
 extern void __CmdFunc_InputPlayerSpecial(void);
+
 void IN_Attack2Down(void) 
 {
 	KeyDown(&in_attack2);
+
+#ifdef _TFC
 	__CmdFunc_InputPlayerSpecial();
+#endif
+
+	gHUD.m_Spectator.HandleButtonsDown( IN_ATTACK2 );
 }
 
 void IN_Attack2Up(void) {KeyUp(&in_attack2);}
-void IN_UseDown (void) {KeyDown(&in_use);}
+void IN_UseDown (void)
+{
+	KeyDown(&in_use);
+	gHUD.m_Spectator.HandleButtonsDown( IN_USE );
+}
 void IN_UseUp (void) {KeyUp(&in_use);}
-void IN_JumpDown (void) {KeyDown(&in_jump);}
+void IN_JumpDown (void)
+{
+	KeyDown(&in_jump);
+	gHUD.m_Spectator.HandleButtonsDown( IN_JUMP );
+
+}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
-void IN_DuckDown(void) {KeyDown(&in_duck);}
+void IN_DuckDown(void)
+{
+	KeyDown(&in_duck);
+	gHUD.m_Spectator.HandleButtonsDown( IN_DUCK );
+
+}
 void IN_DuckUp(void) {KeyUp(&in_duck);}
 void IN_ReloadDown(void) {KeyDown(&in_reload);}
 void IN_ReloadUp(void) {KeyUp(&in_reload);}
@@ -431,6 +491,7 @@ void IN_GraphUp(void) {KeyUp(&in_graph);}
 void IN_AttackDown(void)
 {
 	KeyDown( &in_attack );
+	gHUD.m_Spectator.HandleButtonsDown( IN_ATTACK );
 }
 
 void IN_AttackUp(void)
@@ -654,7 +715,7 @@ if active == 1 then we are 1) not playing back demos ( where our commands are ig
 2 ) we have finished signing on to server
 ================
 */
-void DLLEXPORT CL_CreateMove ( float frametime, struct usercmd_s *cmd, int active )
+void CL_DLLEXPORT CL_CreateMove ( float frametime, struct usercmd_s *cmd, int active )
 {	
 	float spd;
 	vec3_t viewangles;
@@ -1020,7 +1081,15 @@ void ShutdownInput (void)
 	KB_Shutdown();
 }
 
-void DLLEXPORT HUD_Shutdown( void )
+
+void CL_DLLEXPORT HUD_Shutdown( void )
 {
+//	RecClShutdown();
+
 	ShutdownInput();
+
+#if defined( _TFC )
+	ClearEventList();
+#endif
+	
 }

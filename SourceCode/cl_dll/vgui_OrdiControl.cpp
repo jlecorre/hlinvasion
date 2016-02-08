@@ -195,12 +195,12 @@ void COrdiControlPanel::Initialize( void )
 	{
 		if (m_ibitConveyor & ( 1 << i ) )
 		{
-			m_pFleche[i]->m_pTGA = LoadTGA("boutR");
+			m_pFleche[i]->m_pTGA = LoadTGAForRes("boutR");
 			m_pFleche[i]->setImage( m_pFleche[i]->m_pTGA );
 		}
 		else
 		{
-			m_pFleche[i]->m_pTGA = LoadTGA("boutL");
+			m_pFleche[i]->m_pTGA = LoadTGAForRes("boutL");
 			m_pFleche[i]->setImage( m_pFleche[i]->m_pTGA );
 		}
 	}

@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef VGUI_INPUTSIGNAL_H
 #define VGUI_INPUTSIGNAL_H
@@ -26,7 +32,6 @@ public:
 	virtual void keyTyped(KeyCode code,Panel* panel)=0;
 	virtual void keyReleased(KeyCode code,Panel* panel)=0;
 	virtual void keyFocusTicked(Panel* panel)=0;
- 	//virtual void hotKeyTyped(const HotKey* hotKey,Panel* panel)=0;
 };
 
 }

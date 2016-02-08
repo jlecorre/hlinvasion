@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -23,7 +23,9 @@
 #include <sys/stat.h>
 
 #pragma warning(disable: 4142 4028)
+#define filelength IO_filelength
 #include <io.h>
+#undef filelength
 #pragma warning(default: 4142 4028)
 
 #include <fcntl.h>

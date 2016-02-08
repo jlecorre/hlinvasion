@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -7,9 +7,9 @@
 
 #include "../cl_dll/wrect.h"
 #include "../cl_dll/cl_dll.h"
-#include "vgui.h"
+#include "VGUI.h"
 #include "vgui_loadtga.h"
-#include "vgui_inputstream.h"
+#include "VGUI_InputStream.h"
 
 
 // ---------------------------------------------------------------------- //

@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef VGUI_DESKTOP_H
 #define VGUI_DESKTOP_H

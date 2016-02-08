@@ -301,6 +301,7 @@ void CTeamMenuPanel::Update( void )
 				int iXSize, iYSize;
 				m_pBriefing->getTextImage()->getTextSize( iXSize, iYSize );
 				m_pBriefing->setSize( iXSize, iYSize );
+				gEngfuncs.COM_FreeFile( pfile );
 			}
 
 			m_bUpdatedMapName = true;

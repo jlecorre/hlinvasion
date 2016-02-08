@@ -122,7 +122,7 @@ CSGBall *CSGBall :: CreateSGBall ( Vector vecOrigin, Vector vecAngles, entvars_s
 	pBall->pev->owner = ENT ( pevOwner );
 
 	pBall->Spawn();
-	pBall->SetTouch( CSGBall::ExplodeTouch );
+	pBall->SetTouch( &CSGBall::ExplodeTouch );
 	
 	return pBall;
 }
@@ -146,8 +146,8 @@ void CSGBall :: Spawn( void )
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 
-	SetThink( AnimateThink );
-	SetTouch( ExplodeTouch );
+	SetThink( &CSGBall::AnimateThink );
+	SetTouch( &CSGBall::ExplodeTouch );
 
 	pev->dmgtime = gpGlobals->time; // keep track of when ball spawned
 	pev->nextthink = gpGlobals->time + 0.1;
@@ -414,7 +414,7 @@ void CSuperGun::PrimaryAttack()
 	pMuzzle->SetTransparency ( kRenderTransAdd, 128, 128, 220, 250, kRenderFxNone );
 
 //	pMuzzle->pev->frame = RANDOM_LONG(3,6);
-	pMuzzle->SetThink ( SUB_Remove );
+	pMuzzle->SetThink ( &CSuperGun::SUB_Remove );
 	pMuzzle->pev->nextthink = gpGlobals->time + 0.075;
 
 
@@ -470,7 +470,7 @@ void CSuperGun::SecondaryAttack()
 	pMuzzle->SetAttachment ( m_pPlayer->edict(), 1 );
 	pMuzzle->SetScale ( 0.3 );
 	pMuzzle->SetTransparency ( kRenderTransAdd, 128, 128, 220, 250, kRenderFxNone );
-	pMuzzle->SetThink ( SUB_Remove );
+	pMuzzle->SetThink ( &CSprite::SUB_Remove );
 	pMuzzle->pev->nextthink = gpGlobals->time + 0.2;
 
 	SendWeaponAnim( SG_BIGSHOOT );

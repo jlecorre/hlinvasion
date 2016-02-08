@@ -32,6 +32,7 @@
 #include "vgui_int.h"
 #include "vgui_TeamFortressViewport.h"
 #include "vgui_ServerBrowser.h"
+#include "vgui_loadtga.h"
 
 // Arrow filenames
 char *sArrowFilenames[] =
@@ -42,20 +43,31 @@ char *sArrowFilenames[] =
 	"arrowrt", 
 };
 
+// Get the name of TGA file, without a gamedir
+char *GetTGANameForRes(const char *pszName)
+{
+	int i;
+	char sz[256]; 
+	static char gd[256]; 
+	if (ScreenWidth < 640)
+		i = 320;
+	else
+		i = 640;
+	sprintf(sz, pszName, i);
+	sprintf(gd, "gfx/vgui/%s.tga", sz);
+	return gd;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Loads a .tga file and returns a pointer to the VGUI tga object
 //-----------------------------------------------------------------------------
-BitmapTGA *LoadTGA( const char* pImageName )
+BitmapTGA *LoadTGAForRes( const char* pImageName )
 {
 	BitmapTGA	*pTGA;
 
 	char sz[256];
 	sprintf(sz, "%%d_%s", pImageName);
-
-	// Load the Image
-	FileInputStream* fis = new FileInputStream( GetVGUITGAName(sz), false );
-	pTGA = new BitmapTGA(fis,true);
-	fis->close();
+	pTGA = vgui_LoadTGA(GetTGANameForRes(sz));
 
 	return pTGA;
 }
@@ -283,14 +295,14 @@ int ClassButton::IsNotValid()
 CImageLabel::CImageLabel( const char* pImageName,int x,int y ) : Label( "", x,y )
 {
 	setContentFitted(true);
-	m_pTGA = LoadTGA(pImageName);
+	m_pTGA = LoadTGAForRes(pImageName);
 	setImage( m_pTGA );
 }
 
 CImageLabel::CImageLabel( const char* pImageName,int x,int y,int wide,int tall ) : Label( "", x,y,wide,tall )
 {
 	setContentFitted(true);
-	m_pTGA = LoadTGA(pImageName);
+	m_pTGA = LoadTGAForRes(pImageName);
 	setImage( m_pTGA );
 }
 
@@ -298,16 +310,61 @@ CImageLabel::CImageLabel( const char* pImageName,int x,int y,int wide,int tall )
 // Image size
 int CImageLabel::getImageWide( void )
 {
-	int iXSize, iYSize;
-	m_pTGA->getSize( iXSize, iYSize );
-	return iXSize;
+	if( m_pTGA )
+	{
+		int iXSize, iYSize;
+		m_pTGA->getSize( iXSize, iYSize );
+		return iXSize;
+	}
+	else
+	{
+		return 1;
+	}
 }
 
 int CImageLabel::getImageTall( void )
 {
-	int iXSize, iYSize;
-	m_pTGA->getSize( iXSize, iYSize );
-	return iYSize;
+	if( m_pTGA )
+	{
+		int iXSize, iYSize;
+		m_pTGA->getSize( iXSize, iYSize );
+		return iYSize;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
+void CImageLabel::LoadImage(const char * pImageName)
+{
+	if ( m_pTGA )
+		delete m_pTGA;
+
+	// Load the Image
+	m_pTGA = LoadTGAForRes(pImageName);
+
+	if ( m_pTGA == NULL )
+	{
+		// we didn't find a matching image file for this resolution
+		// try to load file resolution independent
+
+		char sz[256];
+		sprintf(sz, "%s/%s",gEngfuncs.pfnGetGameDirectory(), pImageName );
+		FileInputStream* fis = new FileInputStream( sz, false );
+		m_pTGA = new BitmapTGA(fis,true);
+		fis->close();
+	}
+
+	if ( m_pTGA == NULL )
+		return;	// unable to load image
+	 	
+	int w,t;
+
+	m_pTGA->getSize( w, t );
+
+	setSize( XRES (w),YRES (t) );
+	setImage( m_pTGA );
 }
 
 //===========================================================
@@ -328,7 +385,7 @@ CTFScrollButton::CTFScrollButton(int iArrow, const char* text,int x,int y,int wi
 	setFgColor(Scheme::sc_primary1);
 
 	// Load in the arrow
-	m_pTGA = LoadTGA( sArrowFilenames[iArrow] );
+	m_pTGA = LoadTGAForRes( sArrowFilenames[iArrow] );
 	setImage( m_pTGA );
 
 	// Highlight signal
@@ -338,6 +395,9 @@ CTFScrollButton::CTFScrollButton(int iArrow, const char* text,int x,int y,int wi
 
 void CTFScrollButton::paint( void )
 {
+	if (!m_pTGA)
+		return;
+
 	// draw armed button text in white
 	if ( isArmed() )
 	{

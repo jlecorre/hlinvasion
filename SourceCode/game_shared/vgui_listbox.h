@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -15,8 +15,8 @@
 #include "VGUI_Panel.h"
 #include "VGUI_IntChangeSignal.h"
 
-#include "VGUI_Slider2.h"
-#include "VGUI_ScrollBar2.h"
+#include "vgui_slider2.h"
+#include "vgui_scrollbar2.h"
 
 
 namespace vgui

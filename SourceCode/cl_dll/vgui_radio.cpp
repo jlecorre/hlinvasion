@@ -233,17 +233,17 @@ void CRadio::Initialize( void )
 		{
 		default:
 		case GLASSES:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_glasses"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_glasses"); break;
 		case EINSTEIN:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_einstein"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_einstein"); break;
 		case LUTHER:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_luther"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_luther"); break;
 		case SLICK:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_slick"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_slick"); break;
 		case BARNEY:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_barney"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_barney"); break;
 		case INFOCOMBI:
-			m_pHead-> m_pTGA = LoadTGA("radiohead_info"); break;
+			m_pHead-> m_pTGA = LoadTGAForRes("radiohead_info"); break;
 		}
 
 		m_pHead->setImage( m_pHead->m_pTGA );

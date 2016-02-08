@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -173,12 +173,12 @@ void CApache :: Spawn( void )
 
 	if (pev->spawnflags & SF_WAITFORTRIGGER)
 	{
-		SetUse( StartupUse );
+		SetUse( &CApache::StartupUse );
 	}
 	else
 	{
-		SetThink( HuntThink );
-		SetTouch( FlyTouch );
+		SetThink( &CApache::HuntThink );
+		SetTouch( &CApache::FlyTouch );
 		pev->nextthink = gpGlobals->time + 1.0;
 	}
 
@@ -233,8 +233,8 @@ void CApache::NullThink( void )
 
 void CApache::StartupUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	SetThink( HuntThink );
-	SetTouch( FlyTouch );
+	SetThink( &CApache::HuntThink );
+	SetTouch( &CApache::FlyTouch );
 	pev->nextthink = gpGlobals->time + 0.1;
 	SetUse( NULL );
 }
@@ -247,8 +247,8 @@ void CApache :: Killed( entvars_t *pevAttacker, int iGib )
 	STOP_SOUND( ENT(pev), CHAN_STATIC, "apache/ap_rotor2.wav" );
 
 	UTIL_SetSize( pev, Vector( -32, -32, -64), Vector( 32, 32, 0) );
-	SetThink( DyingThink );
-	SetTouch( CrashTouch );
+	SetThink( &CApache::DyingThink );
+	SetTouch( &CApache::CrashTouch );
 	pev->nextthink = gpGlobals->time + 0.1;
 	pev->health = 0;
 	pev->takedamage = DAMAGE_NO;
@@ -468,7 +468,7 @@ void CApache :: DyingThink( void )
 		FCheckAITrigger();
 		//=========
 
-		SetThink( SUB_Remove );
+		SetThink( &CApache::SUB_Remove );
 		pev->nextthink = gpGlobals->time + 0.1;
 	}
 }
@@ -1061,8 +1061,8 @@ void CApacheHVR :: Spawn( void )
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 
-	SetThink( IgniteThink );
-	SetTouch( ExplodeTouch );
+	SetThink( &CApacheHVR::IgniteThink );
+	SetTouch( &CApacheHVR::ExplodeTouch );
 
 	UTIL_MakeAimVectors( pev->angles );
 	m_vecForward = gpGlobals->v_forward;
@@ -1108,7 +1108,7 @@ void CApacheHVR :: IgniteThink( void  )
 	MESSAGE_END();  // move PHS/PVS data sending into here (SEND_ALL, SEND_PVS, SEND_PHS)
 
 	// set to accelerate
-	SetThink( AccelerateThink );
+	SetThink( &CApacheHVR::AccelerateThink );
 	pev->nextthink = gpGlobals->time + 0.1;
 }
 

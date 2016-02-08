@@ -1,3 +1,9 @@
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//=============================================================================
 
 #ifndef CONSOLEPANEL_H
 #define CONSOLEPANEL_H

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -14,11 +14,14 @@
 ****/
 #if !defined( QFONTH )
 #define QFONTH
+#ifdef _WIN32
 #pragma once
+#endif
 
 // Font stuff
 
 #define NUM_GLYPHS 256
+// does not exist: // #include "basetypes.h"
 
 typedef struct
 {
@@ -32,7 +35,7 @@ typedef struct qfont_s
 	int			rowcount;
 	int			rowheight;
 	charinfo	fontinfo[ NUM_GLYPHS ];
-	byte 		data[4];
+	unsigned char data[4];
 } qfont_t;
 
 #endif // qfont.h

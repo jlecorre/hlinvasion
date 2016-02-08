@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -31,7 +31,11 @@ typedef float vec_t;
 typedef int (*pfnUserMsgHook)(const char *pszName, int iSize, void *pbuf);
 
 #include "util_vector.h"
+#ifdef _WIN32
 #define EXPORT	_declspec( dllexport )
+#else
+#define EXPORT	__attribute__ ((visibility("default")))
+#endif
 
 #include "../engine/cdll_int.h"
 #include "../dlls/cdll_dll.h"

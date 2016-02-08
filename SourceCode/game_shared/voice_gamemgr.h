@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -7,7 +7,10 @@
 
 #ifndef VOICE_GAMEMGR_H
 #define VOICE_GAMEMGR_H
+
+#ifdef _WIN32
 #pragma once
+#endif
 
 
 #include "voice_common.h"
@@ -54,6 +57,10 @@ public:
 	// Called on ClientCommand. Checks for the squelch and unsquelch commands.
 	// Returns true if it handled the command.
 	bool				ClientCommand(CBasePlayer *pPlayer, const char *cmd);
+
+	// Called to determine if the Receiver has muted (blocked) the Sender
+	// Returns true if the receiver has blocked the sender
+	bool				PlayerHasBlockedPlayer(CBasePlayer *pReceiver, CBasePlayer *pSender);
 
 
 private:

@@ -265,7 +265,7 @@ void CBriquet::PrimaryAttack()
 		pEtincelle->SetAttachment ( m_pPlayer->edict(), 1 );
 		pEtincelle->SetTransparency( kRenderTransAdd, 255, 255, 255, 255, kRenderFxNoDissipation );
 		pEtincelle->SetScale( 0.05 );
-		pEtincelle->SetThink ( SUB_Remove );
+		pEtincelle->SetThink (&CBriquet::SUB_Remove );
 		pEtincelle->pev->nextthink = gpGlobals->time + 0.05;
 
 		m_flNextPrimaryAttack = gpGlobals->time + 0.3;

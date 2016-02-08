@@ -196,7 +196,7 @@ void CCrowbar::PrimaryAttack()
 {
 	if (! Swing( 1 ))
 	{
-		SetThink( SwingAgain );
+		SetThink( &CCrowbar::SwingAgain );
 		pev->nextthink = gpGlobals->time + 0.1;
 	}
 }
@@ -361,7 +361,7 @@ int CCrowbar::Swing( int fFirst )
 		m_trHit = tr;
 		m_vecDecalSrc = vecSrc;
 		m_vecDecalEnd = vecEnd;
-		SetThink( Smack );
+		SetThink( &CCrowbar::Smack );
 		pev->nextthink = gpGlobals->time + 0.2;
 
 		m_pPlayer->m_iWeaponVolume = flVol * CROWBAR_WALLHIT_VOLUME;

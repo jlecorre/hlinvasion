@@ -227,7 +227,7 @@ void CLightEnt :: Spawn( void )
 	pev->solid = SOLID_NOT;
 	pev->effects = EF_NODRAW;
 
-	SetThink ( LightThink );
+	SetThink ( &CLightEnt::LightThink );
 	pev->nextthink = 0.1;
 
 	startlight = 0;

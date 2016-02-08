@@ -132,7 +132,7 @@ void CFuncVgui :: Use ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	m_pCaller = pCaller;
 
 	m_pPlayer->ShowVGUIordiMenu( m_iparam1, m_iparam2, m_iparam3 );
-	SetThink ( VguiThink );
+	SetThink ( &CFuncVgui::VguiThink );
 	pev->nextthink = pev->nextthink = pev->ltime + 0.5;
 
 }
@@ -234,7 +234,7 @@ void CMonsterCamera :: Spawn ( void )
 	pSprite->SetScale( 0.2 );
 
 
-	SetThink( CamAngles );
+	SetThink( &CMonsterCamera::CamAngles );
 	pev->nextthink = gpGlobals->time + 0.1;
 
 }
@@ -259,7 +259,7 @@ void CMonsterCamera :: Use ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 	if ( value == 1 )
 	{
 		//désactivation
-		pSprite->SetThink( SUB_Remove );
+		pSprite->SetThink( &CMonsterCamera::SUB_Remove );
 		pSprite->pev->nextthink = gpGlobals->time + 0.1;
 
 		SetBoneController( 0, 90 );
@@ -272,7 +272,7 @@ void CMonsterCamera :: Use ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_
 	{
 		//crée un nouveau sprite - fixe le bug de disparition
 
-		pSprite->SetThink( SUB_Remove );
+		pSprite->SetThink( &CMonsterCamera::SUB_Remove );
 		pSprite->pev->nextthink = gpGlobals->time + 0.1;
 
 		pSprite = CSprite::SpriteCreate( "sprites/yelflare1.spr", pev->origin, FALSE );
@@ -403,7 +403,7 @@ void CFuncKeypad :: Use ( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	if ( !pActivator->IsPlayer() )
 		return;
 
-	SetThink ( VguiThink );
+	SetThink ( &CFuncKeypad::VguiThink );
 	pev->nextthink = pev->nextthink = pev->ltime + 0.5;
 
 	MESSAGE_BEGIN( MSG_ALL, gmsgKeypad, NULL );
@@ -541,7 +541,7 @@ void CConveyorControl :: Use ( CBaseEntity *pActivator, CBaseEntity *pCaller, US
 		if ( !pActivator->IsPlayer() )
 			return;
 
-		SetThink ( VguiThink );
+		SetThink ( &CConveyorControl::VguiThink );
 		pev->nextthink = pev->nextthink = pev->ltime + 0.5;
 
 		MESSAGE_BEGIN( MSG_ALL, gmsgConveyor, NULL );

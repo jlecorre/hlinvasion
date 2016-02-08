@@ -25,7 +25,11 @@ extern int gmsgRadioMsg;
 
 #define SCANNE_CHAR if ( fscanf ( myfile, "%s", cscan ) == EOF ) break
 
+#ifdef _WIN32
 #define TEXT_FILE_PATH			"invasion\\texts.txt"
+#else
+#define TEXT_FILE_PATH			"invasion/texts.txt"
+#endif
 
 
 

@@ -1386,7 +1386,7 @@ CFlyBall *CFlyBall :: CreateFlyBall ( Vector vecOrigin, Vector vecAngles, entvar
 	pBall->pev->owner = ENT ( pevOwner );
 
 	pBall->Spawn();
-	pBall->SetTouch( CFlyBall::ExplodeTouch );
+	pBall->SetTouch( &CFlyBall::ExplodeTouch );
 	
 	return pBall;
 }
@@ -1410,8 +1410,8 @@ void CFlyBall :: Spawn( void )
 	UTIL_SetSize(pev, Vector( 0, 0, 0), Vector(0, 0, 0));
 	UTIL_SetOrigin( pev, pev->origin );
 
-	SetThink( AnimateThink );
-	SetTouch( ExplodeTouch );
+	SetThink( &CFlyBall::AnimateThink );
+	SetTouch( &CFlyBall::ExplodeTouch );
 
 	pev->dmgtime = gpGlobals->time; // keep track of when ball spawned
 	pev->nextthink = gpGlobals->time + 0.1;

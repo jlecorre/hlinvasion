@@ -250,29 +250,24 @@ void CGlock::WeaponIdle( void )
 	// only idle if the slid isn't back
 	if (m_iClip != 0)
 	{
-		if (m_flTimeWeaponIdle > gpGlobals->time)
-		return;
-
 		int iAnim;
+		float flRand = UTIL_SharedRandomFloat( m_pPlayer->random_seed, 0.0, 1.0 );
 
-		switch ( RANDOM_LONG( 0, 4 ) )
+		if (flRand <= 0.3 + 0 * 0.75)
 		{
-		case 0 :
-			iAnim = GLOCK_IDLE1;
-			break;
-
-		case 1 :
-			iAnim = GLOCK_IDLE2;
-			break;
-
-		case 3 :
-		default :
 			iAnim = GLOCK_IDLE3;
-			break;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 49.0 / 16;
 		}
-
-		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + RANDOM_FLOAT( 6, 15 );
-
+		else if (flRand <= 0.6 + 0 * 0.875)
+		{
+			iAnim = GLOCK_IDLE1;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 60.0 / 16.0;
+		}
+		else
+		{
+			iAnim = GLOCK_IDLE2;
+			m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 40.0 / 16.0;
+		}
 		SendWeaponAnim( iAnim, 1 );
 	}
 }

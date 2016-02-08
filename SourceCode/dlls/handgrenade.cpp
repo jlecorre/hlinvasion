@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -64,7 +64,9 @@ void CHandGrenade::Spawn( )
 	m_iId = WEAPON_HANDGRENADE;
 	SET_MODEL(ENT(pev), "models/w_grenade.mdl");
 
+#ifndef CLIENT_DLL
 	pev->dmg = gSkillData.plrDmgHandGrenade;
+#endif
 
 	m_iDefaultAmmo = HANDGRENADE_DEFAULT_GIVE;
 
@@ -137,7 +139,7 @@ void CHandGrenade::Holster( int skiplocal  )
 	{
 		// no more grenades!
 		m_pPlayer->pev->weapons &= ~(1<<WEAPON_HANDGRENADE);
-		SetThink( DestroyItem );
+		SetThink( &CHandGrenade::DestroyItem );
 		pev->nextthink = gpGlobals->time + 0.1;
 	}
 

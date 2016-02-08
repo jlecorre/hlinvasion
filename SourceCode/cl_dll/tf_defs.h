@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -176,6 +176,8 @@
 								// be chosen by players, only enforced by maps
 #define PC_LASTCLASS	12 		// Use this as the high-boundary for any loops
 								// through the playerclass.
+
+#define SENTRY_COLOR	10		// will be in the PC_RANDOM slot for team colors
 
 // These are just for the scanner
 #define SCAN_SENTRY		13
@@ -1118,6 +1120,8 @@ float already_chosen_map;
 #define MENU_KEYPAD					11	//modif de Julien
 #define MENU_SOIN					12	//modif de Julien
 #define MENU_RADIO					13	//modif de Julien
+
+#define MENU_SPECHELP				14
 
 
 #define MENU_SPY					12

@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000 Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -124,7 +124,7 @@ void CBarnacle :: Spawn()
 
 	SetActivity ( ACT_IDLE );
 
-	SetThink ( BarnacleThink );
+	SetThink ( &CBarnacle::BarnacleThink );
 	pev->nextthink = gpGlobals->time + 0.5;
 
 	UTIL_SetOrigin ( pev, pev->origin );
@@ -349,7 +349,7 @@ void CBarnacle :: Killed( entvars_t *pevAttacker, int iGib )
 	StudioFrameAdvance( 0.1 );
 
 	pev->nextthink = gpGlobals->time + 0.1;
-	SetThink ( WaitTillDead );
+	SetThink ( &CBarnacle::WaitTillDead );
 }
 
 //=========================================================

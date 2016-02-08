@@ -86,13 +86,16 @@ void CGenericMonster :: HandleAnimEvent( MonsterEvent_t *pEvent )
 	default:
 		CBaseMonster::HandleAnimEvent( pEvent );
 		break;
-
+	//	void GetAttachment ( int iAttachment, Vector &origin, Vector &angles );
 	// modif de Julien
 	case 1444:
+	
+		Vector null_vec = Vector(0,0,0);
+	
 		Vector vecBout;
-		GetAttachment( 1, vecBout, Vector (0,0,0) );
+		GetAttachment( 1, vecBout, null_vec );
 		Vector vecDir;
-		GetAttachment( 0, vecDir, Vector (0,0,0) );
+		GetAttachment( 0, vecDir, null_vec );
 
 		MESSAGE_BEGIN( MSG_ALL, gmsgClientDecal );
 

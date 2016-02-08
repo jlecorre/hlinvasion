@@ -1,6 +1,6 @@
 /***
 *
-*	Copyright (c) 1999, 2000, Valve LLC. All rights reserved.
+*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
 *	
 *	This product contains software technology licensed from Id 
 *	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
@@ -15,7 +15,10 @@
 // mathlib.h
 
 typedef float vec_t;
+#ifndef DID_VEC3_T_DEFINE
+#define DID_VEC3_T_DEFINE
 typedef vec_t vec3_t[3];
+#endif
 typedef vec_t vec4_t[4];	// x,y,z,w
 typedef vec_t vec5_t[5];
 
@@ -27,7 +30,6 @@ typedef vec_s_t vec5s_t[5];
 typedef	int	fixed4_t;
 typedef	int	fixed8_t;
 typedef	int	fixed16_t;
-
 #ifndef M_PI
 #define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
@@ -39,7 +41,10 @@ extern	int nanmask;
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
-#define DotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
+#ifndef VECTOR_H
+	#define DotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
+#endif
+
 #define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
 #define VectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
 #define VectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
@@ -121,8 +126,15 @@ void AngleMatrix (const vec3_t angles, float (*matrix)[4] );
 void AngleIMatrix (const vec3_t angles, float (*matrix)[4] );
 void VectorTransform (const vec3_t in1, float in2[3][4], vec3_t out);
 
+void NormalizeAngles( vec3_t angles );
+void InterpolateAngles( vec3_t start, vec3_t end, vec3_t output, float frac );
+float AngleBetweenVectors( const vec3_t v1, const vec3_t v2 );
+
+
 void VectorMatrix( vec3_t forward, vec3_t right, vec3_t up);
 void VectorAngles( const vec3_t forward, vec3_t angles );
+
+int InvertMatrix( const float * m, float *out );
 
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 float	anglemod(float a);

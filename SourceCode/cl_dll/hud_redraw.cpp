@@ -40,6 +40,9 @@ extern cvar_t *sensitivity;
 // Think
 void CHud::Think(void)
 {
+	m_scrinfo.iSize = sizeof(m_scrinfo);
+	GetScreenInfo(&m_scrinfo);
+
 	int newfov;
 	HUDLIST *pList = m_pHudList;
 
@@ -89,7 +92,7 @@ int CHud :: Redraw( float flTime, int intermission )
 	m_fOldTime = m_flTime;	// save time of previous redraw
 	m_flTime = flTime;
 	m_flTimeDelta = (double)m_flTime - m_fOldTime;
-	static m_flShotTime = 0;
+	static float m_flShotTime = 0;
 	
 	// Clock was reset, reset delta
 	if ( m_flTimeDelta < 0 )

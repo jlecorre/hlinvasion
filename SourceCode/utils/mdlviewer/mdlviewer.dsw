@@ -3,14 +3,10 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "mdlviewer"=.\mdlviewer.dsp - Package Owner=<4>
+Project: "mdlviewer"=".\mdlviewer.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "$/SDKSrc/Tools/utils/mdlviewer", AIHBAAAA
-    .
-    end source code control
 }}}
 
 Package=<4>
@@ -23,10 +19,6 @@ Global:
 
 Package=<5>
 {{{
-    begin source code control
-    "$/SDKSrc/Tools/utils/mdlviewer", AIHBAAAA
-    .
-    end source code control
 }}}
 
 Package=<3>

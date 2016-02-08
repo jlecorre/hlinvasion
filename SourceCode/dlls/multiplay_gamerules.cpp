@@ -25,6 +25,10 @@
 #include	"game.h"
 #include	"items.h"
 
+#if !defined ( _WIN32 )
+#include <ctype.h>
+#endif
+
 extern DLL_GLOBAL CGameRules	*g_pGameRules;
 extern DLL_GLOBAL BOOL	g_fGameOver;
 extern int gmsgDeathMsg;	// client dll messages
