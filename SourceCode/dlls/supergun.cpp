@@ -503,7 +503,7 @@ void CSuperGun::SecondaryAttack()
 
 
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 3,6 );
-	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 31 / 20;
+	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 32.0f / 20.0f;
 
 }
 
