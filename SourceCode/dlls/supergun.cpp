@@ -192,7 +192,7 @@ void CSGBall :: AnimateThink( void  )
 		UTIL_Remove( this );
 	}
 
-	// trainée
+	// trainÃ©e
 
 	if ( delta > 0 && delta < 0.9 )
 	{
@@ -367,7 +367,7 @@ void CSuperGun::Holster( int skiplocal )
 
 void CSuperGun :: Reload ( void )
 {
-	DefaultReload( SUPERGUN_MAX_CLIP, SG_RELOAD, 69 / 25 );
+	DefaultReload( SUPERGUN_MAX_CLIP, SG_RELOAD, 69.0f / 25.0f );
 	
 	int iskin = 0;
 	PLAYBACK_EVENT_FULL( 0, m_pPlayer->edict(), m_usSG, 1, (float *)&g_vecZero, (float *)&g_vecZero, 0.0, 0.0, iskin, 0, 0, 0 );
