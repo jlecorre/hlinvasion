@@ -192,7 +192,7 @@ void CSGBall :: AnimateThink( void  )
 		UTIL_Remove( this );
 	}
 
-	// trainée
+	// trainÃ©e
 
 	if ( delta > 0 && delta < 0.9 )
 	{
@@ -503,7 +503,7 @@ void CSuperGun::SecondaryAttack()
 
 
 	m_flTimeWeaponIdle = gpGlobals->time + RANDOM_FLOAT ( 3,6 );
-	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 32.0f / 20.0f;
+	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 31.0f / 20.0f;
 
 }
 
